@@ -162,6 +162,17 @@ export default function LoginPage() {
               Password: admin123
             </p>
           </div>
+          
+          {/* Links for Forgot Password and Create Account */}
+          <div className="text-center mt-4">
+            <a href="/reset-password" className="text-primary hover:underline">
+              Forgot Password?
+            </a>
+            {' | '}
+            <a href="/signup" className="text-primary hover:underline">
+              Create Account
+            </a>
+          </div>
         </div>
       </div>
     </div>

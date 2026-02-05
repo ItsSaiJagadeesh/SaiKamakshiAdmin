@@ -16,6 +16,8 @@ import CategoriesPage from "./pages/admin/CategoriesPage";
 import BrandsPage from "./pages/admin/BrandsPage";
 import PagesPage from "./pages/admin/PagesPage";
 import SettingsPage from "./pages/admin/SettingsPage";
+import SignupPage from "./pages/SignupPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +31,8 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             
             {/* Admin Routes */}
             <Route path="/admin" element={<AdminLayout />}>

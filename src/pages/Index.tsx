@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
@@ -23,6 +23,15 @@ const Index = () => {
       <div className="text-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
         <p className="text-muted-foreground">Loading Sai Kamakshi Admin...</p>
+        <div>
+          <Link to="/reset-password" className="text-primary hover:underline">
+            Forgot Password?
+          </Link>
+          {' | '}
+          <Link to="/signup" className="text-primary hover:underline">
+            Create Account
+          </Link>
+        </div>
       </div>
     </div>
   );

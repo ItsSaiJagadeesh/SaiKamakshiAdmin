@@ -11,7 +11,7 @@ const Index = () => {
   useEffect(() => {
     if (!isLoading) {
       if (user) {
-        navigate('/admin');
+        navigate('/');
       } else {
         navigate('/login');
       }

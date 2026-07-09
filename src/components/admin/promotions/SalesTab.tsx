@@ -40,7 +40,7 @@ export default function SalesTab() {
   const handleApplySale = async (saleId: string) => {
     try {
       toast.loading('Applying sale discounts...');
-      const response = await fetch('http://localhost:5001/api/sales/apply', {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/sales/apply`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ saleId })
@@ -61,7 +61,7 @@ export default function SalesTab() {
   const handleRevertSale = async (saleId: string) => {
     try {
       toast.loading('Reverting sale discounts...');
-      const response = await fetch('http://localhost:5001/api/sales/revert', {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/sales/revert`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ saleId })

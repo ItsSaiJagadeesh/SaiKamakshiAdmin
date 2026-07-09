@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { useSearchParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const BACKEND_URL = "http://localhost:5001/api/payments";
+const BACKEND_URL = `${import.meta.env.VITE_BACKEND_URL}/api/payments`;
 
 const formatPrice = (price?: number) => {
   if (price === undefined || isNaN(price)) return '₹0';

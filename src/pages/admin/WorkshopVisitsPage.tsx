@@ -66,7 +66,7 @@ const WorkshopVisitsPage = () => {
   const handleSendEmail = async (visit: WorkshopVisit, action: string, extraData: any = {}) => {
     try {
       toast.loading(`Sending ${action.toLowerCase()} email...`, { id: 'workshop-email' });
-      const res = await fetch('http://localhost:5001/api/workshop/email', {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/workshop/email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

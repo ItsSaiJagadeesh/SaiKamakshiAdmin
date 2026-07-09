@@ -102,7 +102,7 @@ export const useUpdateOrderStatus = () => {
             }
           }
 
-          await fetch('http://localhost:5001/api/send-order-email', {
+          await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/send-order-email`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ...orderData, userEmail })

@@ -54,7 +54,7 @@ const CorporateOrdersPage = () => {
         
         await updateOrder.mutateAsync({ id: order.id!, status: newStatus });
 
-        const res = await fetch('http://localhost:5001/api/corporate/email', {
+        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/corporate/email`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ order, adminNotes: order.adminNotes })

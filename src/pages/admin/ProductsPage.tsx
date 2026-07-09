@@ -1,257 +1,196 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Plus, Search, Filter, MoreHorizontal, Pencil, Trash2, Eye, Package } from 'lucide-react';
+import React, { useState } from 'react';
 import { AdminHeader } from '@/components/admin/AdminHeader';
-import { VisibilityBadge, StockBadge } from '@/components/admin/ProductStatusBadge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { fetchProducts } from '@/data/mockData';
-import { CATEGORIES, BRANDS, type Product } from '@/types/admin';
-import { format } from 'date-fns';
-import { useToast } from '@/hooks/use-toast';
+import { Search, Plus, LayoutGrid, List as ListIcon } from 'lucide-react';
+import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct } from '@/api/products';
+import { useCollections } from '@/api/collections';
+import { ProductsGrid } from '@/components/admin/products/ProductsGrid';
+import { ProductsTable } from '@/components/admin/products/ProductsTable';
+import { ProductModal } from '@/components/admin/products/ProductModal';
+import { Product } from '@/types/product';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [brandFilter, setBrandFilter] = useState<string>('all');
+  const [collectionFilter, setCollectionFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
   
-  const { toast } = useToast();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [productToEdit, setProductToEdit] = useState<Product | null>(null);
 
-  useEffect(() => {
-    const loadProducts = async () => {
-      const data = await fetchProducts();
-      setProducts(data);
-    };
-    loadProducts();
-  }, []);
+  const { data: products = [], isLoading: isLoadingProducts } = useProducts();
+  const { data: collections = [] } = useCollections();
+  
+  const createMutation = useCreateProduct();
+  const updateMutation = useUpdateProduct();
+  const deleteMutation = useDeleteProduct();
 
   const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         product.sku.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter;
-    const matchesBrand = brandFilter === 'all' || product.brand === brandFilter;
-    
-    return matchesSearch && matchesCategory && matchesBrand;
+    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          product.slug.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCollection = collectionFilter === 'all' || product.collectionId === collectionFilter;
+    const matchesStatus = statusFilter === 'all' || product.status === statusFilter;
+    return matchesSearch && matchesCollection && matchesStatus;
   });
 
-  const handleDelete = (productId: string) => {
-    setProducts(prev => prev.filter(p => p.id !== productId));
-    toast({
-      title: 'Product deleted',
-      description: 'The product has been removed from your catalog.',
-    });
+  const handleAddProduct = () => {
+    setProductToEdit(null);
+    setIsModalOpen(true);
+  };
+
+  const handleEditProduct = (product: Product) => {
+    setProductToEdit(product);
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteProduct = (id: string) => {
+    if (window.confirm("Are you sure you want to delete this product?")) {
+      deleteMutation.mutate(id);
+    }
+  };
+
+  const handleToggleStatus = (product: Product) => {
+    if (product.id) {
+      updateMutation.mutate({
+        id: product.id,
+        status: product.status === 'published' ? 'draft' : 'published'
+      });
+    }
+  };
+
+  const handleSubmit = (data: any) => {
+    if (productToEdit && productToEdit.id) {
+      updateMutation.mutate(
+        { id: productToEdit.id, ...data },
+        { onSuccess: () => setIsModalOpen(false) }
+      );
+    } else {
+      createMutation.mutate(data, { onSuccess: () => setIsModalOpen(false) });
+    }
   };
 
   return (
-    <div className="animate-fade-in">
+    <div className="animate-fade-in pb-12">
       <AdminHeader 
         title="Products" 
-        description={`${products.length} products in your catalog`}
-        actions={
-          <Link to="/admin/products/new">
-            <Button variant="gold">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Product
-            </Button>
-          </Link>
-        }
+        description={undefined}
       />
       
       <div className="p-6">
-        {/* Filters */}
-        <div className="luxury-card p-4 mb-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search products by name or SKU..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 input-luxury"
-              />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+          <div>
+            <h2 className="font-serif text-2xl font-semibold text-foreground">All Products</h2>
+            <p className="text-muted-foreground text-sm">{products.length} products in catalog</p>
+          </div>
+          <Button onClick={handleAddProduct} className="gap-2 shrink-0 bg-[#b98d4d] hover:bg-[#a67d43] text-white">
+            <Plus className="h-4 w-4" />
+            Add Product
+          </Button>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder="Search products..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 bg-card border-border h-10 focus-visible:ring-primary focus-visible:border-primary"
+            />
+          </div>
+          
+          <div className="flex flex-col sm:flex-row gap-4 sm:w-auto">
+            <Select value={collectionFilter} onValueChange={setCollectionFilter}>
+              <SelectTrigger className="w-full sm:w-[200px] h-10 bg-card border-border focus:ring-primary focus:border-primary">
+                <SelectValue placeholder="All Collections" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Collections</SelectItem>
+                {collections.map(c => (
+                  <SelectItem key={c.id} value={c.id || ''}>{c.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-[160px] h-10 bg-card border-border focus:ring-primary focus:border-primary">
+                <SelectValue placeholder="All Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="published">Published</SelectItem>
+                <SelectItem value="draft">Draft</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="h-[42px] flex border border-border rounded-lg overflow-hidden">
+              <Button 
+                          variant='ghost'
+                          size="icon"
+                          onClick={() => setViewMode('grid')}
+                          className={`h-10 w-10 rounded-none ${viewMode==="grid"?"bg-muted":"bg-transparent"}`}
+                        >
+                          <LayoutGrid className="h-4 w-4" />
+              </Button>
+              <Button 
+                          variant='ghost'
+                          size="icon"
+                          onClick={() => setViewMode('list')}
+                          className={`h-10 w-10 rounded-none ${viewMode==="list"?"bg-muted":"bg-transparent"}`}
+                        >
+                          <ListIcon className="h-4 w-4" />
+              </Button>
             </div>
-            
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-full sm:w-48 input-luxury">
-                <SelectValue placeholder="All Categories" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {CATEGORIES.map(cat => (
-                  <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            <Select value={brandFilter} onValueChange={setBrandFilter}>
-              <SelectTrigger className="w-full sm:w-48 input-luxury">
-                <SelectValue placeholder="All Brands" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Brands</SelectItem>
-                {BRANDS.map(brand => (
-                  <SelectItem key={brand.value} value={brand.value}>{brand.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
         </div>
-        
-        {/* Products Table */}
-        <div className="luxury-card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border bg-muted/30">
-                  <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Product
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Brand
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Category
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Price
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Updated
-                  </th>
-                  <th className="px-6 py-4 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {filteredProducts.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center">
-                      <Package className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-                      <p className="text-muted-foreground">No products found</p>
-                      <Link to="/admin/products/new">
-                        <Button variant="outline" className="mt-4">
-                          Add your first product
-                        </Button>
-                      </Link>
-                    </td>
-                  </tr>
-                ) : (
-                  filteredProducts.map((product, index) => (
-                    <tr 
-                      key={product.id} 
-                      className="table-row-hover animate-slide-up"
-                      style={{ animationDelay: `${index * 30}ms` }}
-                    >
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-4">
-                          <div className="h-14 w-14 rounded-lg bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
-                            {product.images[0] ? (
-                              <img 
-                                src={product.images[0].url} 
-                                alt={product.name}
-                                className="h-full w-full object-cover"
-                              />
-                            ) : (
-                              <Package className="h-6 w-6 text-muted-foreground" />
-                            )}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-medium text-foreground truncate">{product.name}</p>
-                            <p className="text-sm text-muted-foreground">{product.sku}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm text-foreground">
-                          {BRANDS.find(b => b.value === product.brand)?.label}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm text-foreground">
-                          {CATEGORIES.find(c => c.value === product.category)?.label}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div>
-                          {product.discountPrice ? (
-                            <div className="flex flex-col">
-                              <span className="font-medium text-foreground">₹{product.discountPrice.toLocaleString()}</span>
-                              <span className="text-sm text-muted-foreground line-through">₹{product.price.toLocaleString()}</span>
-                            </div>
-                          ) : (
-                            <span className="font-medium text-foreground">₹{product.price.toLocaleString()}</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-col gap-1.5">
-                          <VisibilityBadge status={product.visibility} />
-                          <StockBadge status={product.stockStatus} />
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm text-muted-foreground">
-                          {format(product.updatedAt, 'MMM d, yyyy')}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48">
-                            <DropdownMenuItem asChild>
-                              <Link to={`/admin/products/${product.id}`} className="flex items-center">
-                                <Eye className="h-4 w-4 mr-2" />
-                                View Details
-                              </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
-                              <Link to={`/admin/products/${product.id}/edit`} className="flex items-center">
-                                <Pencil className="h-4 w-4 mr-2" />
-                                Edit Product
-                              </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem 
-                              onClick={() => handleDelete(product.id)}
-                              className="text-destructive focus:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+
+        {!isLoadingProducts && filteredProducts.length === 0 ? (
+          <div className="rounded-xl border border-border bg-card p-12 flex flex-col items-center justify-center text-center mt-6">
+            <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+              <Search className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground">No products found</h3>
+            <p className="text-muted-foreground mt-2 max-w-sm">
+              {searchQuery || collectionFilter !== 'all' || statusFilter !== 'all'
+                ? "We couldn't find any products matching your filters. Try adjusting them."
+                : "Get started by creating your first product."}
+            </p>
+            {(!searchQuery && collectionFilter === 'all' && statusFilter === 'all') && (
+              <Button onClick={handleAddProduct} className="mt-6 bg-[#b98d4d] hover:bg-[#a67d43] text-white">
+                Create new product
+              </Button>
+            )}
           </div>
-        </div>
+        ) : (
+          viewMode === 'grid' ? (
+            <ProductsGrid 
+              products={filteredProducts} 
+              isLoading={isLoadingProducts} 
+              onEdit={handleEditProduct}
+              onDelete={handleDeleteProduct}
+              onToggleStatus={handleToggleStatus}
+            />
+          ) : (
+            <ProductsTable 
+              products={filteredProducts} 
+              isLoading={isLoadingProducts} 
+              onEdit={handleEditProduct}
+              onDelete={handleDeleteProduct}
+              onToggleStatus={handleToggleStatus}
+            />
+          )
+        )}
       </div>
+
+      <ProductModal 
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        productToEdit={productToEdit}
+        onSubmit={handleSubmit}
+        isLoading={createMutation.isPending || updateMutation.isPending}
+      />
     </div>
   );
 }

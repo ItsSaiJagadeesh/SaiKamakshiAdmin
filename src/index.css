@@ -6,79 +6,62 @@
 
 @layer base {
   :root {
-    /* Luxury Jewellery Admin Theme - Warm & Elegant */
-    --background: 40 33% 97%;
+    --background: 48 100% 99%;
     --foreground: 30 10% 15%;
-
-    --card: 40 30% 99%;
+    --card: 45 50% 98%;
     --card-foreground: 30 10% 15%;
-
-    --popover: 40 30% 99%;
+    --popover: 45 50% 99%;
     --popover-foreground: 30 10% 15%;
-
-    /* Rich Gold - Primary Brand Color */
     --primary: 43 74% 49%;
-    --primary-foreground: 40 33% 98%;
-
-    /* Soft Beige - Secondary */
-    --secondary: 35 25% 92%;
-    --secondary-foreground: 30 10% 25%;
-
-    /* Muted Cream */
-    --muted: 35 20% 94%;
+    --primary-foreground: 30 10% 10%;
+    --secondary: 38 30% 92%;
+    --secondary-foreground: 30 15% 25%;
+    --muted: 40 25% 94%;
     --muted-foreground: 30 10% 45%;
-
-    /* Gold Accent */
-    --accent: 43 74% 49%;
-    --accent-foreground: 40 33% 98%;
-
-    /* Warm Red for Destructive */
+    --accent: 38 55% 85%;
+    --accent-foreground: 30 20% 20%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-
-    /* Success Green */
-    --success: 142 71% 35%;
-    --success-foreground: 0 0% 100%;
-
-    /* Warning Amber */
-    --warning: 38 92% 50%;
-    --warning-foreground: 30 10% 15%;
-
-    --border: 35 20% 88%;
-    --input: 35 20% 88%;
+    --border: 38 20% 88%;
+    --input: 38 20% 90%;
     --ring: 43 74% 49%;
-
-    --radius: 0.625rem;
-
-    /* Sidebar - Warm Dark */
+    --radius: .5rem;
     --sidebar-background: 30 15% 12%;
-    --sidebar-foreground: 40 20% 90%;
+    --sidebar-foreground: 38 20% 85%;
     --sidebar-primary: 43 74% 55%;
-    --sidebar-primary-foreground: 30 15% 12%;
-    --sidebar-accent: 30 15% 18%;
-    --sidebar-accent-foreground: 40 20% 90%;
-    --sidebar-border: 30 15% 20%;
-    --sidebar-ring: 43 74% 55%;
-
-    /* Custom Luxury Variables */
+    --sidebar-primary-foreground: 30 15% 10%;
+    --sidebar-accent: 30 12% 18%;
+    --sidebar-accent-foreground: 38 30% 92%;
+    --sidebar-border: 30 10% 20%;
+    --sidebar-ring: 43 74% 49%;
     --gold: 43 74% 49%;
-    --gold-light: 43 74% 65%;
-    --gold-dark: 43 74% 35%;
-    --ivory: 40 33% 97%;
-    --cream: 35 30% 95%;
-    --charcoal: 30 10% 15%;
-    --taupe: 30 15% 40%;
+    --gold-light: 43 65% 65%;
+    --gold-dark: 38 70% 38%;
+    --ivory: 48 100% 99%;
+    --charcoal: 30 15% 12%;
+    --success: 142 70% 45%;
+    --warning: 38 92% 50%;
+    --info: 199 89% 48%;
+    --gradient-gold: linear-gradient(135deg, hsl(43 74% 49%) 0%, hsl(38 70% 38%) 100%);
+    --gradient-subtle: linear-gradient(180deg, hsl(45 50% 98%) 0%, hsl(40 25% 94%) 100%);
+    --gradient-sidebar: linear-gradient(180deg, hsl(30 15% 12%) 0%, hsl(30 18% 8%) 100%);
+    --shadow-sm: 0 1px 2px 0 hsl(30 20% 20% / .05);
+    --shadow-md: 0 4px 6px -1px hsl(30 20% 20% / .08), 0 2px 4px -2px hsl(30 20% 20% / .04);
+    --shadow-lg: 0 10px 15px -3px hsl(30 20% 20% / .08), 0 4px 6px -4px hsl(30 20% 20% / .04);
+    --shadow-gold: 0 4px 14px -3px hsl(43 74% 49% / .25);
 
-    /* Gradients */
-    --gradient-gold: linear-gradient(135deg, hsl(43 74% 55%) 0%, hsl(43 74% 42%) 100%);
-    --gradient-luxury: linear-gradient(180deg, hsl(40 33% 99%) 0%, hsl(35 25% 95%) 100%);
-    --gradient-sidebar: linear-gradient(180deg, hsl(30 15% 14%) 0%, hsl(30 15% 10%) 100%);
-
-    /* Shadows */
-    --shadow-sm: 0 1px 2px 0 hsl(30 10% 15% / 0.03);
-    --shadow-md: 0 4px 6px -1px hsl(30 10% 15% / 0.05), 0 2px 4px -2px hsl(30 10% 15% / 0.05);
-    --shadow-lg: 0 10px 15px -3px hsl(30 10% 15% / 0.08), 0 4px 6px -4px hsl(30 10% 15% / 0.05);
-    --shadow-gold: 0 4px 14px 0 hsl(43 74% 49% / 0.25);
+    /* Mockup Pastel Colors */
+    --pastel-yellow: 40 90% 94%;
+    --pastel-green: 147 45% 94%;
+    --pastel-orange: 25 90% 95%;
+    --pastel-blue: 211 100% 96%;
+    --pastel-gray: 0 0% 96%;
+    
+    --icon-yellow: 33 63% 60%;
+    --icon-green: 151 46% 62%;
+    --icon-orange: 24 85% 66%;
+    --icon-blue: 208 65% 60%;
+    --icon-gray: 0 0% 60%;
   }
 
   .dark {
@@ -171,7 +154,7 @@
   }
 
   .sidebar-item.active {
-    @apply bg-sidebar-primary text-sidebar-primary-foreground;
+    @apply bg-sidebar-primary text-sidebar-primary-foreground border-l-4 border-sidebar-primary-foreground rounded-l-none rounded-r-lg;
   }
 
   .stat-card {

@@ -2,9 +2,12 @@ import { Outlet, Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { cn } from '@/lib/utils';
 
 export default function AdminLayout() {
   const { user, isLoading } = useAuth();
+  const [collapsed, setCollapsed] = useState(false);
 
   if (isLoading) {
     return (
@@ -23,8 +26,8 @@ export default function AdminLayout() {
 
   return (
     <div className="min-h-screen bg-background">
-      <AdminSidebar />
-      <main className="pl-64">
+      <AdminSidebar collapsed={collapsed} setCollapsed={setCollapsed} />
+      <main className={cn("transition-all duration-300", collapsed ? "pl-[72px]" : "pl-[260px]")}>
         <Outlet />
       </main>
     </div>

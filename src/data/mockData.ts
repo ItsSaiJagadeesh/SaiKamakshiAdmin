@@ -1,5 +1,6 @@
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebaseconfig';
+import { Product } from '@/types/product';
 
 export const fetchProducts = async () => {
   const productsCollection = collection(db, 'products');
@@ -10,7 +11,7 @@ export const fetchProducts = async () => {
 export const fetchCategories = async () => {
   const categoriesCollection = collection(db, 'categories');
   const snapshot = await getDocs(categoriesCollection);
-  return snapshot.docs.map(docs => ({ id: doc.id, ...doc.data() }));
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
 export const fetchBrands = async () => {

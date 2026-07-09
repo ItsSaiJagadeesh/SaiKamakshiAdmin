@@ -12,22 +12,25 @@ import {
   ShoppingCart,
   CreditCard,
   Briefcase,
-  CalendarCheck
+  CalendarCheck,
+  Tags,
+  Users
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 
 const navigation = [
-  { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-  { name: 'Collections', href: '/admin/collections', icon: FolderOpen },
-  { name: 'Products', href: '/admin/products', icon: Package },
-  { name: 'Variants', href: '/admin/variants', icon: Layers },
-  { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
-  { name: 'Payments', href: '/admin/payments', icon: CreditCard }, 
-  { name: 'Corporate', href: '/admin/corporate', icon: Briefcase },
-  { name: 'Workshop Visits', href: '/admin/visits', icon: CalendarCheck },
-  { name: 'Content', href: '/admin/pages', icon: FileText },
-  { name: 'Settings', href: '/admin/settings', icon: Settings },
+  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { name: 'Collections', href: '/collections', icon: FolderOpen },
+  { name: 'Products', href: '/products', icon: Package },
+  { name: 'Variants', href: '/variants', icon: Layers },
+  { name: 'Orders', href: '/orders', icon: ShoppingCart },
+  { name: 'Payments', href: '/payments', icon: CreditCard }, 
+  { name: 'Offers & Sales', href: '/offers', icon: Tags },
+  { name: 'Corporate', href: '/corporate', icon: Briefcase },
+  { name: 'Workshop Visits', href: '/visits', icon: CalendarCheck },
+  // { name: 'Content', href: '/pages', icon: FileText },
+  // { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
 interface AdminSidebarProps {
@@ -40,8 +43,8 @@ export function AdminSidebar({ collapsed, setCollapsed }: AdminSidebarProps) {
   const { logout, user } = useAuth();
 
   const isActive = (href: string) => {
-    if (href === '/admin') {
-      return location.pathname === '/admin';
+    if (href === '/') {
+      return location.pathname === '/';
     }
     return location.pathname.startsWith(href);
   };
@@ -95,6 +98,28 @@ export function AdminSidebar({ collapsed, setCollapsed }: AdminSidebarProps) {
             </Link>
           );
         })}
+        {user?.role === 'root_admin' && (
+          <Link
+            to="/admins"
+            className={cn(
+              "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-300 group relative",
+              isActive('/admins') 
+                ? "bg-sidebar-accent text-sidebar-primary active" 
+                : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
+              collapsed && "justify-center"
+            )}
+          >
+            {isActive('/admins') && (
+              <div className="absolute left-0 w-1 h-6 bg-sidebar-primary rounded-r-full" />
+            )}
+            <Users className={cn("h-5 w-5 shrink-0", isActive('/admins') && "text-sidebar-primary")} />
+            {!collapsed && (
+              <span className={cn("text-sm font-medium", isActive('/admins') && "text-sidebar-primary")}>
+                Admins
+              </span>
+            )}
+          </Link>
+        )}
       </nav>
 
       <div className="p-3 border-t border-sidebar-border">
@@ -107,7 +132,7 @@ export function AdminSidebar({ collapsed, setCollapsed }: AdminSidebarProps) {
           {!collapsed && (
             <div className="overflow-hidden">
               <p className="text-sm font-medium text-sidebar-foreground truncate">{user?.name || 'Lakshmi Devi'}</p>
-              <p className="text-xs text-sidebar-foreground/60 truncate">super_admin</p>
+              <p className="text-xs text-sidebar-foreground/60 truncate">{user?.role === 'root_admin' ? 'Root Admin' : 'Admin'}</p>
             </div>
           )}
         </div>

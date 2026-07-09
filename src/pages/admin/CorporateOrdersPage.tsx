@@ -1,415 +1,467 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { 
-  Search, Download, CheckCircle, XCircle, Clock, Edit, 
-  MessageSquare, Briefcase, LayoutGrid, List, Table, Filter 
+  Building2, 
+  Search, 
+  Filter, 
+  MoreVertical, 
+  Mail, 
+  Phone, 
+  CheckCircle2, 
+  XCircle,
+  FileText,
+  Download,
+  LayoutGrid,
+  List as ListIcon,
+  X
 } from 'lucide-react';
-import { AdminHeader } from '@/components/admin/AdminHeader';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
+import { format } from 'date-fns';
+import { toast } from 'sonner';
+import { useCorporateOrders, useUpdateCorporateOrder, CorporateOrder } from '@/api/corporate';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Settings2, Tag, Save } from 'lucide-react';
+import { AdminHeader } from '@/components/admin/AdminHeader';
 
-type ViewMode = 'table' | 'grid' | 'list';
+const CorporateOrdersPage = () => {
+  const { data: corporateOrders, isLoading } = useCorporateOrders();
+  const updateOrder = useUpdateCorporateOrder();
 
-import { CorporateOrder, OrderStatus, mockCorporateOrders } from '@/data/staticMockData';
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectedOrder, setSelectedOrder] = useState<CorporateOrder | null>(null);
+  const [localNote, setLocalNote] = useState('');
 
-export default function CorporateOrdersPage() {
-  const [orders, setOrders] = useState<CorporateOrder[]>(mockCorporateOrders);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('All');
-  const [viewMode, setViewMode] = useState<ViewMode>('table');
-  const [selectedNoteOrder, setSelectedNoteOrder] = useState<CorporateOrder | null>(null);
-  const [adminNoteText, setAdminNoteText] = useState('');
-  
-  const { toast } = useToast();
-
-  const filteredOrders = orders.filter(order => {
-    const query = searchQuery.toLowerCase();
-    const matchesSearch = 
-      order.companyName.toLowerCase().includes(query) ||
-      order.contactPerson.toLowerCase().includes(query) ||
-      order.id.toLowerCase().includes(query) ||
-      order.mobile.includes(query);
-    
-    const matchesStatus = statusFilter === 'All' || order.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
-
-  const handleStatusChange = (id: string, newStatus: OrderStatus) => {
-    setOrders(orders.map(o => o.id === id ? { ...o, status: newStatus } : o));
-    toast({
-      title: "Status Updated",
-      description: `Order ${id} marked as ${newStatus}.`
-    });
-  };
-
-  const handleSaveNote = () => {
-    if (selectedNoteOrder) {
-      setOrders(orders.map(o => 
-        o.id === selectedNoteOrder.id ? { ...o, adminNotes: adminNoteText } : o
-      ));
-      toast({ title: "Admin Note Saved", description: "Internal notes updated successfully." });
-      setSelectedNoteOrder(null);
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'PLACED': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'CONFIRMED': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'COMPLETED': return 'bg-green-100 text-green-800 border-green-200';
+      case 'CANCELLED': return 'bg-red-100 text-red-800 border-red-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
-  const getStatusBadge = (status: OrderStatus) => {
-    const styles = {
-      Pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
-      Approved: "bg-blue-100 text-blue-800 border-blue-200",
-      Proceeding: "bg-purple-100 text-purple-800 border-purple-200",
-      Delivered: "bg-green-100 text-green-800 border-green-200",
-      Cancelled: "bg-red-100 text-red-800 border-red-200"
-    };
+  const handleUpdateStatus = async (order: CorporateOrder, newStatus: string) => {
+    try {
+      // Optimistic local update of selected order panel state
+      setSelectedOrder(prev => prev ? { ...prev, status: newStatus } : null);
+
+      if (newStatus === 'CONFIRMED') {
+        toast.loading('Confirming order & sending email...', { id: 'confirm-email' });
+        
+        await updateOrder.mutateAsync({ id: order.id!, status: newStatus });
+
+        const res = await fetch('http://localhost:5001/api/corporate/email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ order, adminNotes: order.adminNotes })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          toast.success('Order confirmed and detailed email sent to customer.', { id: 'confirm-email' });
+        } else {
+          toast.error('Order updated but email failed to send.', { id: 'confirm-email' });
+        }
+      } else {
+        await updateOrder.mutateAsync({ id: order.id!, status: newStatus });
+        toast.success(`Order status updated to ${newStatus}`);
+      }
+    } catch (err) {
+      toast.error('Failed to update status');
+    }
+  };
+
+  const handleUpdateNotes = async () => {
+    if (!selectedOrder) return;
+    try {
+      const id = selectedOrder.id!;
+      const notes = localNote;
+      setSelectedOrder(prev => prev ? { ...prev, adminNotes: notes } : null);
+      await updateOrder.mutateAsync({ id, adminNotes: notes });
+      toast.success('Admin notes updated');
+    } catch (err) {
+      toast.error('Failed to update notes');
+    }
+  };
+
+  const handleOpenPanel = (order: CorporateOrder) => {
+    setSelectedOrder(order);
+    setLocalNote(order.adminNotes || '');
+  };
+
+  const handleToggleSelect = (id: string) => {
+    const newSet = new Set(selectedIds);
+    if (newSet.has(id)) newSet.delete(id);
+    else newSet.add(id);
+    setSelectedIds(newSet);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedIds.size === filteredOrders?.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredOrders?.map(o => o.id!)));
+    }
+  };
+
+  const exportCSV = () => {
+    if (selectedIds.size === 0) {
+      toast.error('Please select at least one order to export.');
+      return;
+    }
+
+    const selectedData = corporateOrders?.filter(o => selectedIds.has(o.id!)) || [];
     
-    return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full border ${styles[status]}`}>
-        {status}
-      </span>
-    );
+    const headers = ['Order ID', 'Date', 'Contact Person', 'Company', 'Email', 'Mobile', 'Category', 'Quantity', 'Status', 'Requirements', 'Admin Notes'];
+    const rows = selectedData.map(o => [
+      o.id,
+      o.createdAt?.toDate ? format(o.createdAt.toDate(), 'yyyy-MM-dd') : 'N/A',
+      `"${o.contactPerson}"`,
+      `"${o.companyName}"`,
+      o.email,
+      o.mobile,
+      o.category,
+      o.quantity,
+      o.status,
+      `"${(o.requirements || '').replace(/"/g, '""')}"`,
+      `"${(o.adminNotes || '').replace(/"/g, '""')}"`
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `corporate_orders_${format(new Date(), 'yyyyMMdd')}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
-  const exportToCSV = () => {
-    toast({
-      title: "Export Successful",
-      description: "Corporate_Orders.csv has been generated (Mock)."
-    });
-  };
+  const filteredOrders = corporateOrders?.filter(order => {
+    const matchesSearch = 
+      order.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.contactPerson?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = filterStatus === 'all' || order.status.toLowerCase() === filterStatus.toLowerCase();
 
-  const getCategoryLabel = (cat: string) => {
-    const categories: Record<string, string> = {
-      corporate_gifting: "Corporate Gifting",
-      retail_wholesale: "Retail/Wholesale",
-      temple_jewellery: "Temple Jewellery",
-      custom_manufacturing: "Custom Mfg"
-    };
-    return categories[cat] || cat;
-  };
+    return matchesSearch && matchesStatus;
+  });
+
+  if (isLoading) return <div className="p-8 text-center text-muted-foreground">Loading corporate orders...</div>;
 
   return (
-    <div className="animate-fade-in">
-      <AdminHeader 
+    <div className="animate-fade-in pb-12 relative overflow-x-hidden min-h-screen">
+      <AdminHeader
         title="Corporate Orders" 
-        description="Manage B2B, wholesale, and institutional bulk orders"
-        actions={
-          <Button onClick={exportToCSV} variant="outline" className="flex items-center gap-2">
-            <Download className="h-4 w-4" />
-            Export to CSV
-          </Button>
-        }
+        description="Manage B2B enquiries, bulk orders, and custom manufacturing requests."
       />
-      
-      <div className="p-6">
-        {/* Filters and View Toggles */}
-        <div className="luxury-card p-4 mb-6">
-          <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
-            
-            {/* Search & Filter */}
-            <div className="flex flex-col sm:flex-row gap-4 flex-1 w-full">
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by Company, Contact, or Order ID..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 input-luxury"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4 text-muted-foreground" />
-                <select 
-                  className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                >
-                  <option value="All">All Statuses</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Approved">Approved</option>
-                  <option value="Proceeding">Proceeding</option>
-                  <option value="Delivered">Delivered</option>
-                  <option value="Cancelled">Cancelled</option>
-                </select>
-              </div>
-            </div>
-
-            {/* View Toggles */}
-            <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-lg border border-border">
-              <Button 
-                variant={viewMode === 'table' ? 'secondary' : 'ghost'} 
-                size="sm" 
-                onClick={() => setViewMode('table')}
-                className="px-2 py-1 h-8"
-              >
-                <Table className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant={viewMode === 'list' ? 'secondary' : 'ghost'} 
-                size="sm" 
+      <div className='p-6'>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-start gap-4 mb-8">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input 
+              type="text"
+              placeholder="Search by company, contact person, or email..."
+              className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="w-full sm:w-[160px] h-10 bg-card border-border focus:ring-primary focus:border-primary">
+              <SelectValue placeholder="All Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="placed">Placed</SelectItem>
+              <SelectItem value="confirmed">Confirmed</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="flex items-center gap-3">
+            <Button variant="outline" className="gap-2" onClick={exportCSV}>
+              <Download className="w-4 h-4" /> Export CSV
+            </Button>
+            <div className="flex border border-border rounded-md overflow-hidden">
+              <button 
+                className={`p-2 ${viewMode === 'list' ? 'bg-primary/10 text-primary' : 'bg-background hover:bg-muted'}`}
                 onClick={() => setViewMode('list')}
-                className="px-2 py-1 h-8"
               >
-                <List className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant={viewMode === 'grid' ? 'secondary' : 'ghost'} 
-                size="sm" 
+                <ListIcon className="w-4 h-4" />
+              </button>
+              <button 
+                className={`p-2 ${viewMode === 'grid' ? 'bg-primary/10 text-primary' : 'bg-background hover:bg-muted'}`}
                 onClick={() => setViewMode('grid')}
-                className="px-2 py-1 h-8"
               >
-                <LayoutGrid className="h-4 w-4" />
-              </Button>
+                <LayoutGrid className="w-4 h-4" />
+              </button>
             </div>
           </div>
         </div>
-        
-        {/* Data Views */}
-        
-        {filteredOrders.length === 0 ? (
-          <div className="luxury-card p-12 text-center text-muted-foreground">
-            No corporate orders found matching your criteria.
-          </div>
-        ) : (
-          <>
-            {/* TABLE VIEW */}
-            {viewMode === 'table' && (
-              <div className="luxury-card overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-border bg-muted/30">
-                        <th className="px-4 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Order ID</th>
-                        <th className="px-4 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Company & Contact</th>
-                        <th className="px-4 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Order Details</th>
-                        <th className="px-4 py-4 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
-                        <th className="px-4 py-4 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {filteredOrders.map((order) => (
-                        <tr key={order.id} className="table-row-hover">
-                          <td className="px-4 py-4">
-                            <div className="font-medium text-foreground">{order.id}</div>
-                            <div className="text-xs text-muted-foreground">Date: {order.dateSubmitted}</div>
-                          </td>
-                          <td className="px-4 py-4">
-                            <div className="font-medium text-foreground flex items-center gap-1.5">
-                              <Briefcase className="h-4 w-4 text-muted-foreground" />
-                              {order.companyName}
-                            </div>
-                            <div className="text-sm text-foreground mt-1">{order.contactPerson}</div>
-                            <div className="text-xs text-muted-foreground">{order.email}</div>
-                            <div className="text-xs text-muted-foreground">{order.mobile}</div>
-                          </td>
-                          <td className="px-4 py-4">
-                            <div className="text-sm font-medium text-foreground">
-                              {getCategoryLabel(order.category)} ({order.quantity} pcs)
-                            </div>
-                            <div className="text-xs text-muted-foreground truncate max-w-[250px] mt-1" title={order.requirements}>
-                              {order.requirements}
-                            </div>
-                            {order.adminNotes && (
-                              <div className="text-xs text-blue-600 truncate max-w-[250px] mt-1 flex items-center gap-1" title={order.adminNotes}>
-                                <Edit className="w-3 h-3" /> Note: {order.adminNotes}
-                              </div>
-                            )}
-                          </td>
-                          <td className="px-4 py-4">
-                            {getStatusBadge(order.status)}
-                          </td>
-                          <td className="px-4 py-4 text-right">
-                            <OrderActionsDropdown 
-                              order={order} 
-                              handleStatusChange={handleStatusChange} 
-                              setSelectedNoteOrder={setSelectedNoteOrder}
-                              setAdminNoteText={setAdminNoteText}
-                            />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
 
-            {/* LIST VIEW */}
-            {viewMode === 'list' && (
-              <div className="flex flex-col gap-4">
-                {filteredOrders.map((order) => (
-                  <div key={order.id} className="luxury-card p-4 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center hover:border-secondary/30 transition-colors">
-                    <div className="flex-1">
-                      <div className="flex flex-wrap items-center gap-3 mb-2">
-                        <span className="font-bold text-foreground text-lg">{order.companyName}</span>
-                        {getStatusBadge(order.status)}
-                        <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md">{order.id}</span>
+        {viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredOrders?.map((order) => (
+              <div 
+                key={order.id} 
+                className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col cursor-pointer hover:border-primary/50 transition-colors"
+                onClick={() => handleOpenPanel(order)}
+              >
+                <div className="p-5 border-b border-gray-100 flex-1">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                        <Building2 className="w-5 h-5" />
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                        <div>
-                          <span className="text-muted-foreground">Contact:</span> <span className="font-medium text-foreground">{order.contactPerson}</span>
-                          <div className="text-muted-foreground text-xs mt-0.5">{order.mobile}</div>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Order:</span> <span className="font-medium text-foreground">{getCategoryLabel(order.category)}</span>
-                          <div className="text-muted-foreground text-xs mt-0.5">Qty: {order.quantity} pieces</div>
-                        </div>
-                        <div className="sm:col-span-2 md:col-span-1">
-                          <span className="text-muted-foreground">Submitted:</span> <span className="font-medium text-foreground">{order.dateSubmitted}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex-shrink-0 mt-4 sm:mt-0">
-                      <OrderActionsDropdown 
-                        order={order} 
-                        handleStatusChange={handleStatusChange} 
-                        setSelectedNoteOrder={setSelectedNoteOrder}
-                        setAdminNoteText={setAdminNoteText}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* GRID VIEW */}
-            {viewMode === 'grid' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredOrders.map((order) => (
-                  <div key={order.id} className="luxury-card flex flex-col p-5 hover:-translate-y-1 transition-transform duration-200">
-                    <div className="flex justify-between items-start mb-4 border-b border-border pb-4">
                       <div>
-                        <h3 className="font-serif font-bold text-lg text-foreground truncate" title={order.companyName}>{order.companyName}</h3>
-                        <p className="text-sm text-muted-foreground">{order.contactPerson}</p>
+                        <h3 className="font-semibold text-gray-900">{order.companyName}</h3>
+                        <p className="text-sm text-gray-500">{order.contactPerson}</p>
                       </div>
-                      {getStatusBadge(order.status)}
+                    </div>
+                    <span className={`px-2.5 py-1 text-xs font-medium rounded-full border ${getStatusColor(order.status)}`}>
+                      {order.status}
+                    </span>
+                  </div>
+
+                  <div className="space-y-3 mt-4">
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Mail className="w-4 h-4 text-gray-400" />
+                      <span className="truncate max-w-[200px]">{order.email}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Phone className="w-4 h-4 text-gray-400" />
+                      <span>{order.mobile}</span>
                     </div>
                     
-                    <div className="flex-1 space-y-3 text-sm">
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="text-muted-foreground">Request ID</div>
-                        <div className="font-medium text-foreground text-right">{order.id}</div>
-                        
-                        <div className="text-muted-foreground">Date</div>
-                        <div className="font-medium text-foreground text-right">{order.dateSubmitted}</div>
-                        
-                        <div className="text-muted-foreground">Category</div>
-                        <div className="font-medium text-foreground text-right">{getCategoryLabel(order.category)}</div>
-                        
-                        <div className="text-muted-foreground">Quantity</div>
-                        <div className="font-medium text-foreground text-right">{order.quantity}</div>
+                    <div className="pt-3 border-t border-gray-100 grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Category</p>
+                        <p className="text-sm font-medium text-gray-900 capitalize">{order.category.replace('_', ' ')}</p>
                       </div>
-                      
-                      <div className="pt-2 border-t border-border/50">
-                        <div className="text-xs text-muted-foreground line-clamp-2" title={order.requirements}>
-                          {order.requirements}
-                        </div>
-                        {order.adminNotes && (
-                          <div className="text-xs text-blue-600 line-clamp-2 mt-2 p-2 bg-blue-50 rounded-md border border-blue-100">
-                            <strong>Note:</strong> {order.adminNotes}
-                          </div>
-                        )}
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Est. Quantity</p>
+                        <p className="text-sm font-medium text-gray-900">{order.quantity} pieces</p>
                       </div>
-                    </div>
-
-                    <div className="mt-4 pt-4 border-t border-border flex justify-end">
-                      <OrderActionsDropdown 
-                        order={order} 
-                        handleStatusChange={handleStatusChange} 
-                        setSelectedNoteOrder={setSelectedNoteOrder}
-                        setAdminNoteText={setAdminNoteText}
-                      />
                     </div>
                   </div>
-                ))}
+                </div>
+              </div>
+            ))}
+
+            {filteredOrders?.length === 0 && (
+              <div className="col-span-full py-12 text-center text-gray-500">
+                No corporate orders found matching your search.
               </div>
             )}
-          </>
-        )}
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <table className="w-full text-sm text-left">
+              <thead className="bg-gray-50 border-b border-gray-200 text-gray-600 font-medium">
+                <tr>
+                  <th className="px-4 py-3 w-10">
+                    <input type="checkbox" 
+                      className="rounded border-gray-300 text-primary focus:ring-primary/20"
+                      checked={selectedIds.size > 0 && selectedIds.size === filteredOrders?.length}
+                      onChange={handleSelectAll}
+                    />
+                  </th>
+                  <th className="px-4 py-3">Company / Contact</th>
+                  <th className="px-4 py-3">Category</th>
+                  <th className="px-4 py-3">Quantity</th>
+                  <th className="px-4 py-3">Date</th>
+                  <th className="px-4 py-3">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {filteredOrders?.map(order => (
+                  <tr 
+                    key={order.id}
+                    className={`hover:bg-gray-50 cursor-pointer transition-colors ${selectedOrder?.id === order.id ? 'bg-primary/5' : ''}`}
+                    onClick={() => handleOpenPanel(order)}
+                  >
+                    <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
+                      <input type="checkbox" 
+                        className="rounded border-gray-300 text-primary focus:ring-primary/20"
+                        checked={selectedIds.has(order.id!)}
+                        onChange={() => handleToggleSelect(order.id!)}
+                      />
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="font-medium text-gray-900">{order.companyName}</div>
+                      <div className="text-gray-500 text-xs">{order.contactPerson}</div>
+                    </td>
+                    <td className="px-4 py-4 capitalize">{order.category.replace('_', ' ')}</td>
+                    <td className="px-4 py-4">{order.quantity} pcs</td>
+                    <td className="px-4 py-4 text-gray-500 text-xs">
+                      {order.createdAt?.toDate ? format(order.createdAt.toDate(), 'MMM d, yyyy') : 'N/A'}
+                    </td>
+                    <td className="px-4 py-4">
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(order.status)}`}>
+                        {order.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
 
-        {/* Note Edit Modal (Global for page) */}
-        {selectedNoteOrder && (
-          <Dialog open={!!selectedNoteOrder} onOpenChange={(open) => !open && setSelectedNoteOrder(null)}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Admin Note - {selectedNoteOrder.companyName}</DialogTitle>
-              </DialogHeader>
-              <Textarea 
-                value={adminNoteText} 
-                onChange={(e) => setAdminNoteText(e.target.value)} 
-                placeholder="Type an internal note here (e.g., quotations sent, negotiation details)..."
-                className="min-h-[120px]"
-              />
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setSelectedNoteOrder(null)}>Cancel</Button>
-                <Button onClick={handleSaveNote}>Save Note</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+                {filteredOrders?.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                      No corporate orders found matching your search.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
+
+      {/* Slide-out Side Panel using Framer Motion */}
+      <AnimatePresence>
+        {selectedOrder && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.5 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedOrder(null)}
+              className="fixed inset-0 bg-black/50 z-40"
+            />
+            
+            {/* Sliding Panel */}
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed top-0 right-0 h-full w-full sm:w-[500px] bg-white shadow-2xl z-50 border-l border-gray-200 overflow-y-auto"
+            >
+              <div className="sticky top-0 bg-white/80 backdrop-blur-md z-10 border-b border-gray-100 p-6 flex justify-between items-center">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">{selectedOrder.companyName}</h2>
+                  <p className="text-sm text-gray-500">Order ID: {selectedOrder.id}</p>
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => setSelectedOrder(null)} className="rounded-full hover:bg-gray-100">
+                  <X className="w-5 h-5 text-gray-500" />
+                </Button>
+              </div>
+
+              <div className="p-6 space-y-8">
+                
+                {/* Status Section */}
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-gray-900 text-sm flex items-center gap-2">
+                    <Tag className="w-4 h-4 text-primary" /> Manage Status
+                  </h4>
+                  <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    <Select 
+                      value={selectedOrder.status}
+                      onValueChange={(value) => handleUpdateStatus(selectedOrder, value)}
+                    >
+                      <SelectTrigger className="w-full h-10 bg-white border-gray-200">
+                        <SelectValue placeholder="Select Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="PLACED">Placed (New)</SelectItem>
+                        <SelectItem value="CONFIRMED">Confirm & Send Email</SelectItem>
+                        <SelectItem value="COMPLETED">Completed</SelectItem>
+                        <SelectItem value="CANCELLED">Cancel Order</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {selectedOrder.status === 'CONFIRMED' && (
+                      <p className="text-xs text-blue-600 mt-3 bg-blue-50/50 p-2.5 rounded-lg flex items-center gap-2 border border-blue-100">
+                        <CheckCircle2 className="w-4 h-4" /> Confirmation email already sent to client.
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Details Section */}
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-gray-900 text-sm flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-primary" /> Enquiry Details
+                  </h4>
+                  <div className="bg-white p-4 rounded-xl border border-gray-200 space-y-4 shadow-sm">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <span className="text-xs text-gray-500 block mb-1">Contact Person</span>
+                        <span className="text-sm font-medium text-gray-900">{selectedOrder.contactPerson}</span>
+                      </div>
+                      <div>
+                        <span className="text-xs text-gray-500 block mb-1">Mobile</span>
+                        <a href={`tel:${selectedOrder.mobile}`} className="text-sm font-medium text-gray-900 hover:text-primary">{selectedOrder.mobile}</a>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-xs text-gray-500 block mb-1">Email</span>
+                        <a href={`mailto:${selectedOrder.email}`} className="text-sm font-medium text-primary hover:underline">{selectedOrder.email}</a>
+                      </div>
+                      <div>
+                        <span className="text-xs text-gray-500 block mb-1">Category</span>
+                        <span className="text-sm font-medium text-gray-900 capitalize">{selectedOrder.category.replace('_', ' ')}</span>
+                      </div>
+                      <div>
+                        <span className="text-xs text-gray-500 block mb-1">Estimated Quantity</span>
+                        <span className="text-sm font-medium text-gray-900">{selectedOrder.quantity} pieces</span>
+                      </div>
+                    </div>
+                    <div className="pt-2 border-t border-gray-100">
+                      <span className="text-xs text-gray-500 block mb-2">Special Requirements</span>
+                      <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg border border-gray-100 whitespace-pre-wrap">
+                        {selectedOrder.requirements || 'No special requirements provided.'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Admin Notes Section */}
+                <div className="space-y-3 pb-8">
+                  <h4 className="font-semibold text-gray-900 text-sm flex items-center gap-2">
+                    <Building2 className="w-4 h-4 text-primary" /> Admin Official Notes
+                  </h4>
+                  <div className="space-y-3">
+                    <p className="text-xs text-gray-500">These notes will be included in the confirmation email sent to the client as an official quotation.</p>
+                    <textarea 
+                      className="w-full text-sm border border-gray-200 rounded-xl p-4 min-h-[160px] focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none shadow-sm leading-relaxed"
+                      placeholder="Enter quotation details, pricing, or internal notes..."
+                      value={localNote}
+                      onChange={(e) => setLocalNote(e.target.value)}
+                    />
+                    <AnimatePresence>
+                      {localNote !== (selectedOrder.adminNotes || '') && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="flex justify-end"
+                        >
+                          <Button onClick={handleUpdateNotes} size="sm" className="gap-2">
+                            <Save className="w-4 h-4" />
+                            Save Notes
+                          </Button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
+
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
-}
+};
 
-// Separate component for the dropdown menu to keep code clean and reusable across views
-function OrderActionsDropdown({ 
-  order, 
-  handleStatusChange, 
-  setSelectedNoteOrder, 
-  setAdminNoteText 
-}: { 
-  order: CorporateOrder, 
-  handleStatusChange: (id: string, s: OrderStatus) => void,
-  setSelectedNoteOrder: (o: CorporateOrder) => void,
-  setAdminNoteText: (t: string) => void
-}) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm">
-          Manage
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
-        <DropdownMenuItem onClick={() => handleStatusChange(order.id, 'Pending')}>
-          <Clock className="h-4 w-4 mr-2 text-yellow-500" /> Mark Pending
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleStatusChange(order.id, 'Approved')}>
-          <CheckCircle className="h-4 w-4 mr-2 text-blue-500" /> Approve
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleStatusChange(order.id, 'Proceeding')}>
-          <Briefcase className="h-4 w-4 mr-2 text-purple-500" /> Set Proceeding
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleStatusChange(order.id, 'Delivered')}>
-          <CheckCircle className="h-4 w-4 mr-2 text-green-500" /> Mark Delivered
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setSelectedNoteOrder(order); setAdminNoteText(order.adminNotes); }}>
-          <MessageSquare className="h-4 w-4 mr-2" /> Add/Edit Note
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem 
-          onClick={() => handleStatusChange(order.id, 'Cancelled')}
-          className="text-destructive focus:text-destructive"
-        >
-          <XCircle className="h-4 w-4 mr-2" /> Cancel Order
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
+export default CorporateOrdersPage;

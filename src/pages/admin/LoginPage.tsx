@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Lock, Mail, Loader2 } from 'lucide-react';
+import { doSignInWithEmailAndPassWord } from '@/lib/auth.services';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +14,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const { login } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -22,12 +23,12 @@ export default function LoginPage() {
     setIsSubmitting(true);
     
     try {
-      await login(email, password);
+      await doSignInWithEmailAndPassWord(email, password);
       toast({
         title: 'Welcome back!',
         description: 'You have successfully logged in.',
       });
-      navigate('/admin');
+      navigate('/');
     } catch (error) {
       toast({
         title: 'Login failed',
@@ -55,7 +56,7 @@ export default function LoginPage() {
         <div className="relative z-10 flex flex-col justify-center items-center w-full p-12 text-center">
           <div className="mb-8">
             <div className="w-20 h-20 mx-auto rounded-full bg-sidebar-primary/20 flex items-center justify-center mb-6">
-              <span className="font-serif text-3xl text-sidebar-primary">SK</span>
+              <img src='/logo.jpeg' alt='Sai Kamakshi logo' className='w-20 h-20 rounded-full'/>
             </div>
             <h1 className="font-serif text-4xl font-semibold text-sidebar-foreground mb-4">
               Sai Kamakshi Jewellery
@@ -134,6 +135,16 @@ export default function LoginPage() {
               </div>
             </div>
             
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => navigate('/forgot-password')}
+                className="text-sm font-medium text-primary hover:underline"
+              >
+                Forgot Password?
+              </button>
+            </div>
+            
             <Button
               type="submit"
               variant="gold"
@@ -152,16 +163,6 @@ export default function LoginPage() {
             </Button>
           </form>
           
-          {/* Demo Credentials */}
-          <div className="mt-8 p-4 rounded-lg bg-muted/50 border border-border">
-            <p className="text-sm text-muted-foreground text-center">
-              <span className="font-medium text-foreground">Demo Credentials:</span>
-              <br />
-              Email: admin@saikamakshi.com
-              <br />
-              Password: admin123
-            </p>
-          </div>
         </div>
       </div>
     </div>

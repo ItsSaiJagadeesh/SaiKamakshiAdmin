@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 interface OrderCardProps {
   order: Order;
   onStatusChangeRequest: (orderId: string, newStatus: Order['status']) => void;
+  onSelect: () => void;
 }
 
 const formatPrice = (price?: number) => {
@@ -21,8 +22,7 @@ const formatPrice = (price?: number) => {
   }).format(price);
 };
 
-export function OrderCard({ order, onStatusChangeRequest }: OrderCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+export function OrderCard({ order, onStatusChangeRequest, onSelect }: OrderCardProps) {
 
   // Format date safely
   const formattedDate = order.createdAt 
@@ -51,12 +51,12 @@ export function OrderCard({ order, onStatusChangeRequest }: OrderCardProps) {
   };
 
   return (
-    <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden mb-4">
+    <div 
+      className="rounded-xl border border-border bg-card shadow-sm overflow-hidden mb-4 cursor-pointer hover:border-primary/50 transition-colors"
+      onClick={onSelect}
+    >
       {/* Header - Always visible */}
-      <div 
-        className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer hover:bg-muted/30 transition-colors"
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
+      <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex-1">
           <p className="text-foreground text-base ">Order #{order.id}</p>
           <p className="text-sm text-muted-foreground">{formattedDate}</p>
@@ -96,148 +96,11 @@ export function OrderCard({ order, onStatusChangeRequest }: OrderCardProps) {
             {formatPrice(order.finalAmount || order.total || (order as any).totalAmount || (order as any).subtotal).replace('₹', '')}
           </div>
 
-          <motion.div
-            animate={{ rotate: isExpanded ? 180 : 0 }}
-            transition={{ duration: 0.3 }}
-            className="text-muted-foreground ml-2"
-          >
-            <ChevronDown className="h-5 w-5" />
+          <motion.div className="text-muted-foreground ml-2">
+            <ChevronDown className="h-5 w-5 -rotate-90" />
           </motion.div>
         </div>
       </div>
-
-      {/* Expanded Content with Framer Motion */}
-      <AnimatePresence initial={false}>
-        {isExpanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="overflow-hidden"
-          >
-            <div className="p-5 pt-0 border-t border-border mt-4 flex flex-col gap-6">
-              
-              {/* 1. Order Items */}
-              <div>
-                <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                  <Package className="h-4 w-4 text-muted-foreground" />
-                  Order Items
-                </h4>
-                <div className="space-y-4">
-                  {order.items.map((item, idx) => (
-                    <div key={idx} className="flex gap-4 items-start bg-muted/20 p-3 rounded-lg border border-border/40">
-                      <div className="w-16 h-16 rounded-md bg-muted border border-border overflow-hidden shrink-0">
-                        {item.image ? (
-                          <img src={item.image} alt={item.variantName} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Box className="h-6 w-6 text-muted-foreground" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <Link 
-                          to={`/admin/variants?search=${encodeURIComponent(item.variantName)}`} 
-                          className="font-semibold text-sm text-primary hover:underline line-clamp-1"
-                        >
-                          {item.variantName}
-                        </Link>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Size: {item.size} • Qty: {item.quantity}
-                        </p>
-                      </div>
-                      <div className="font-medium text-sm text-foreground shrink-0">
-                        {formatPrice(item.price * item.quantity)}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* 2. Delivery Address */}
-              <div className="border-t border-border/50 pt-4">
-                <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  Delivery Address
-                </h4>
-                <div className="text-sm text-muted-foreground bg-muted/20 p-4 rounded-lg border border-border/40 space-y-1">
-                  <p className="font-medium text-foreground uppercase tracking-wide text-sm mb-1">
-                    {order.address.name} <span className="text-muted-foreground lowercase">({order.address.phone})</span>
-                  </p>
-                  <p className="capitalize">
-                    {order.address.street}{order.address.area ? `, ${order.address.area}` : ''}
-                  </p>
-                  <p className="capitalize">
-                    {order.address.city}, {order.address.state}, {order.address.country} - {order.address.pincode}
-                  </p>
-                </div>
-              </div>
-
-              {/* Shipping Details (If applicable) */}
-              {order.shippingDetails && (
-                <div className="border-t border-border/50 pt-4">
-                  <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                    <Truck className="h-4 w-4 text-muted-foreground" />
-                    Shipping Information
-                  </h4>
-                  <div className="text-sm text-muted-foreground bg-muted/20 p-4 rounded-lg border border-border/40 flex flex-col sm:flex-row gap-6">
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Courier</p>
-                      <p className="font-medium text-foreground">{order.shippingDetails.courierName}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Tracking ID</p>
-                      <p className="font-medium text-foreground font-mono">{order.shippingDetails.trackingId}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* 3. Payment Info */}
-              <div className="border-t border-border/50 pt-4">
-                <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                  <CreditCard className="h-4 w-4 text-muted-foreground" />
-                  Payment Information
-                </h4>
-                <div className="text-sm text-muted-foreground bg-muted/20 p-4 rounded-lg border border-border/40">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-3">
-                      <div className="flex justify-between sm:block">
-                        <p className="text-xs text-muted-foreground mb-1">Payment ID</p>
-                        <p className="font-medium text-foreground font-mono">{order.id}</p>
-                      </div>
-                      <div className="flex justify-between sm:block">
-                        <p className="text-xs text-muted-foreground mb-1">Coupon Applied</p>
-                        <p className="font-medium text-foreground uppercase">{order.coupon || "None"}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-3 bg-muted/10 p-3 rounded border border-border/30">
-                      <div className="flex justify-between items-center">
-                        <p className="text-muted-foreground">Subtotal:</p>
-                        <span className="font-medium text-foreground">₹{order.total}</span>
-                      </div>
-                      {(order as any).discount > 0 && (
-                        <div className="flex justify-between items-center">
-                          <p className="text-muted-foreground">Discount:</p>
-                          <span className="font-medium text-success">-₹{(order as any).discount}</span>
-                        </div>
-                      )}
-                      <div className="h-px bg-border my-2" />
-                      <div className="flex justify-between items-center">
-                        <p className="font-semibold text-foreground">Final Amount:</p>
-                        <p className="font-bold text-lg text-foreground">₹{order.finalAmount}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

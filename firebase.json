@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "admin-panel-skmw",
     "public": "dist",
     "ignore": [
       "firebase.json",

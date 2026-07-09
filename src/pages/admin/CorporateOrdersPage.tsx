@@ -192,13 +192,13 @@ const CorporateOrdersPage = () => {
               <Download className="w-4 h-4" /> Export CSV
             </Button>
             <div className="flex border border-border rounded-md overflow-hidden">
-              <button 
+              <button  title="List View"
                 className={`p-2 ${viewMode === 'list' ? 'bg-primary/10 text-primary' : 'bg-background hover:bg-muted'}`}
                 onClick={() => setViewMode('list')}
               >
                 <ListIcon className="w-4 h-4" />
               </button>
-              <button 
+              <button  title="Grid View"
                 className={`p-2 ${viewMode === 'grid' ? 'bg-primary/10 text-primary' : 'bg-background hover:bg-muted'}`}
                 onClick={() => setViewMode('grid')}
               >
@@ -269,7 +269,7 @@ const CorporateOrdersPage = () => {
               <thead className="bg-gray-50 border-b border-gray-200 text-gray-600 font-medium">
                 <tr>
                   <th className="px-4 py-3 w-10">
-                    <input type="checkbox" 
+                    <input title='Select All' type="checkbox" 
                       className="rounded border-gray-300 text-primary focus:ring-primary/20"
                       checked={selectedIds.size > 0 && selectedIds.size === filteredOrders?.length}
                       onChange={handleSelectAll}
@@ -291,6 +291,8 @@ const CorporateOrdersPage = () => {
                   >
                     <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
                       <input type="checkbox" 
+                        title="Select order"
+                        aria-label={`Select order ${order.companyName}`}
                         className="rounded border-gray-300 text-primary focus:ring-primary/20"
                         checked={selectedIds.has(order.id!)}
                         onChange={() => handleToggleSelect(order.id!)}

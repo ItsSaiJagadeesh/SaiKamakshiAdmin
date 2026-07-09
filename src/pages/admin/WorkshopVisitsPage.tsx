@@ -244,12 +244,14 @@ const WorkshopVisitsPage = () => {
               </Button>
               <div className="flex border border-border rounded-md overflow-hidden">
                   <button 
+                    title="List View"
                     className={`p-2 ${viewMode === 'list' ? 'bg-primary/10 text-primary' : 'bg-background hover:bg-muted'}`}
                     onClick={() => setViewMode('list')}
                   >
                     <ListIcon className="w-4 h-4" />
                   </button>
                   <button 
+                    title="Grid View"
                     className={`p-2 ${viewMode === 'grid' ? 'bg-primary/10 text-primary' : 'bg-background hover:bg-muted'}`}
                     onClick={() => setViewMode('grid')}
                   >
@@ -272,8 +274,13 @@ const WorkshopVisitsPage = () => {
                 <Input type="date" value={rescheduleData.date} onChange={e => setRescheduleData({...rescheduleData, date: e.target.value})} />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">New Time</label>
-                <select className="w-full border border-gray-200 rounded-md p-2 text-sm" value={rescheduleData.time} onChange={e => setRescheduleData({...rescheduleData, time: e.target.value})}>
+                <label htmlFor="reschedule-time" className="text-sm font-medium">New Time</label>
+                <select
+                  id="reschedule-time"
+                  className="w-full border border-gray-200 rounded-md p-2 text-sm"
+                  value={rescheduleData.time}
+                  onChange={e => setRescheduleData({...rescheduleData, time: e.target.value})}
+                >
                   <option value="">Select time</option>
                   <option value="10:00 AM">10:00 AM - 11:00 AM</option>
                   <option value="11:00 AM">11:00 AM - 12:00 PM</option>

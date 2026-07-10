@@ -23,7 +23,6 @@ const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Collections', href: '/collections', icon: FolderOpen },
   { name: 'Products', href: '/products', icon: Package },
-  { name: 'Variants', href: '/variants', icon: Layers },
   { name: 'Orders', href: '/orders', icon: ShoppingCart },
   { name: 'Payments', href: '/payments', icon: CreditCard }, 
   { name: 'Offers & Sales', href: '/offers', icon: Tags },

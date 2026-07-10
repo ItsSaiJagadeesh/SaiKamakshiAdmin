@@ -8,17 +8,26 @@ import { useCollections } from '@/api/collections';
 import { ProductsGrid } from '@/components/admin/products/ProductsGrid';
 import { ProductsTable } from '@/components/admin/products/ProductsTable';
 import { ProductModal } from '@/components/admin/products/ProductModal';
+import { ProductDetailsPanel } from '@/components/admin/products/ProductDetailsPanel';
 import { Product } from '@/types/product';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
+import { useSearchParams } from 'react-router-dom';
+import { useEffect } from 'react';
 export default function ProductsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [collectionFilter, setCollectionFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [productToEdit, setProductToEdit] = useState<Product | null>(null);
+  const [productToView, setProductToView] = useState<Product | null>(null);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12;
 
   const { data: products = [], isLoading: isLoadingProducts } = useProducts();
   const { data: collections = [] } = useCollections();
@@ -35,6 +44,29 @@ export default function ProductsPage() {
     return matchesSearch && matchesCollection && matchesStatus;
   });
 
+  // Handle URL changes to open side panel
+  useEffect(() => {
+    const productSlug = searchParams.get('product');
+    if (productSlug && products.length > 0) {
+      const foundProduct = products.find(p => p.slug === productSlug);
+      if (foundProduct) {
+        setProductToView(foundProduct);
+        setIsDetailsOpen(true);
+      }
+    }
+  }, [searchParams, products]);
+
+  // Handle filter changes by resetting page to 1
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, collectionFilter, statusFilter]);
+
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const paginatedProducts = filteredProducts.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   const handleAddProduct = () => {
     setProductToEdit(null);
     setIsModalOpen(true);
@@ -43,6 +75,11 @@ export default function ProductsPage() {
   const handleEditProduct = (product: Product) => {
     setProductToEdit(product);
     setIsModalOpen(true);
+    setIsDetailsOpen(false); // Close details if open
+  };
+
+  const handleRowClick = (product: Product) => {
+    setSearchParams({ product: product.slug });
   };
 
   const handleDeleteProduct = (id: string) => {
@@ -164,23 +201,54 @@ export default function ProductsPage() {
             )}
           </div>
         ) : (
-          viewMode === 'grid' ? (
-            <ProductsGrid 
-              products={filteredProducts} 
-              isLoading={isLoadingProducts} 
-              onEdit={handleEditProduct}
-              onDelete={handleDeleteProduct}
-              onToggleStatus={handleToggleStatus}
-            />
-          ) : (
-            <ProductsTable 
-              products={filteredProducts} 
-              isLoading={isLoadingProducts} 
-              onEdit={handleEditProduct}
-              onDelete={handleDeleteProduct}
-              onToggleStatus={handleToggleStatus}
-            />
-          )
+          <>
+            {viewMode === 'grid' ? (
+              <ProductsGrid 
+                products={paginatedProducts} 
+                isLoading={isLoadingProducts} 
+                onEdit={handleEditProduct}
+                onDelete={handleDeleteProduct}
+                onToggleStatus={handleToggleStatus}
+                onRowClick={handleRowClick}
+              />
+            ) : (
+              <ProductsTable 
+                products={paginatedProducts} 
+                isLoading={isLoadingProducts} 
+                onEdit={handleEditProduct}
+                onDelete={handleDeleteProduct}
+                onToggleStatus={handleToggleStatus}
+                onRowClick={handleRowClick}
+              />
+            )}
+            
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-4 mt-8 pt-4">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="font-bold"
+                >
+                  &lt;
+                </Button>
+                <span className="text-sm font-semibold text-muted-foreground">
+                  {currentPage} / {totalPages}
+                </span>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="font-bold"
+                >
+                  &gt;
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -191,6 +259,19 @@ export default function ProductsPage() {
         onSubmit={handleSubmit}
         isLoading={createMutation.isPending || updateMutation.isPending}
       />
+      
+      {isDetailsOpen && (
+        <ProductDetailsPanel 
+          product={productToView}
+          onClose={() => {
+            setIsDetailsOpen(false);
+            setProductToView(null);
+            setSearchParams({});
+          }}
+          onEdit={handleEditProduct}
+          onDelete={handleDeleteProduct}
+        />
+      )}
     </div>
   );
 }

@@ -152,26 +152,26 @@ export default function DashboardPage() {
           </div>
 
           {/* Delivered */}
-          <div className="rounded-xl border p-6 shadow-sm transition-all duration-200 hover:shadow-md bg-gradient-to-br from-info/10 to-info/5 border-info/20">
+          <div className="rounded-xl border p-6 shadow-sm transition-all duration-200 hover:shadow-md bg-gradient-to-br from-blue-400/10 to-blue-400/5 border-blue-400/20">
             <div className="flex items-start justify-between">
               <div className="space-y-3">
                 <p className="text-sm font-medium text-muted-foreground">Delivered</p>
                 <p className="text-3xl font-semibold text-foreground">{deliveredOrders}</p>
               </div>
-              <div className="p-3 rounded-lg bg-info/20 text-info">
+              <div className="p-3 rounded-lg bg-blue-400/20 text-blue-500">
                 <CheckCircle2 className="h-6 w-6" />
               </div>
             </div>
           </div>
 
           {/* Cancelled */}
-          <div className="rounded-xl border p-6 shadow-sm transition-all duration-200 hover:shadow-md bg-card border-border">
+          <div className="rounded-xl border p-6 shadow-sm transition-all duration-200 hover:shadow-md bg-gradient-to-br from-rose-400/10 to-rose-400/5 border-rose-400/20">
             <div className="flex items-start justify-between">
               <div className="space-y-3">
                 <p className="text-sm font-medium text-muted-foreground">Cancelled</p>
                 <p className="text-3xl font-semibold text-foreground">{cancelledOrders}</p>
               </div>
-              <div className="p-3 rounded-lg bg-muted text-muted-foreground">
+              <div className="p-3 rounded-lg bg-rose-400/20 text-rose-500">
                 <XCircle className="h-6 w-6" />
               </div>
             </div>

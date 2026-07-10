@@ -1,24 +1,30 @@
-export type ProductStatus = 'published' | 'draft';
+export interface ProductSize {
+  sizeId: string;
+  label: string;
+  priceAdjustment?: number;
+  stock: number;
+}
+
+export type ProductStatus = 'published' | 'draft' | 'out_of_stock';
 
 export interface Product {
   id?: string;
   name: string;
   slug: string;
   collectionId: string;
-  collectionName: string; // Storing denormalized for easier querying/display
-  thumbnail: string;
+  collectionName: string;
+  skuPrefix: string;
+  images: string[];
   description?: string;
   occasions?: string[];
-  priceRange: {
-    min: number;
-    max: number;
-  };
-  variantCount: number;
-  reviewSummary: {
+  originalPrice: number;
+  discount?: number;
+  sizes: ProductSize[];
+  status: ProductStatus;
+  reviewSummary?: {
     rating: number;
     count: number;
   };
-  status: ProductStatus;
   createdAt?: any;
   updatedAt?: any;
 }

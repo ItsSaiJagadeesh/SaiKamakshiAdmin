@@ -11,7 +11,6 @@ import LoginPage from "./pages/admin/LoginPage";
 import AdminLayout from "./layouts/AdminLayout";
 import DashboardPage from '@/pages/admin/DashboardPage';
 import ProductsPage from '@/pages/admin/ProductsPage';
-import VariantsPage from '@/pages/admin/VariantsPage';
 import OrdersPage from '@/pages/admin/OrdersPage';
 import PaymentsPage from '@/pages/admin/PaymentsPage';
 import WorkshopVisitsPage from "./pages/admin/WorkshopVisitsPage";
@@ -43,7 +42,6 @@ const App = () => (
               <Route path="admins" element={<AdminManagementPage />} />
               <Route path="collections" element={<CollectionsPage />} />
               <Route path="products" element={<ProductsPage />} />
-              <Route path="variants" element={<VariantsPage />} />
               <Route path="orders" element={<OrdersPage />} />
               <Route path="payments" element={<PaymentsPage />} />
               <Route path="visits" element={<WorkshopVisitsPage />} />

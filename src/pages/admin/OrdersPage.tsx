@@ -187,43 +187,43 @@ export default function OrdersPage() {
       <div className="p-6">
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="rounded-xl border border-border bg-yellow-50/50 p-6 shadow-sm flex justify-between items-start">
+          <div className="rounded-xl border bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 p-6 shadow-sm flex justify-between items-start">
             <div>
               <p className="text-sm font-medium text-muted-foreground mb-2">Total Orders</p>
               <p className="text-3xl font-semibold text-foreground">{totalOrders}</p>
             </div>
-            <div className="w-10 h-10 rounded-lg bg-yellow-100 flex items-center justify-center text-yellow-600">
-              <Package className="h-5 w-5" />
+            <div className="p-3 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
+              <Package className="h-6 w-6" />
             </div>
           </div>
           
-          <div className="rounded-xl border border-border bg-green-50/50 p-6 shadow-sm flex justify-between items-start">
+          <div className="rounded-xl border bg-gradient-to-br from-success/10 to-success/5 border-success/20 p-6 shadow-sm flex justify-between items-start">
             <div>
               <p className="text-sm font-medium text-muted-foreground mb-2">Confirmed</p>
               <p className="text-3xl font-semibold text-foreground">{confirmedCount}</p>
             </div>
-            <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center text-green-600">
-              <CheckCircle2 className="h-5 w-5" />
+            <div className="p-3 rounded-lg bg-success/20 flex items-center justify-center text-success">
+              <CheckCircle2 className="h-6 w-6" />
             </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-blue-50/50 p-6 shadow-sm flex justify-between items-start">
+          <div className="rounded-xl border bg-gradient-to-br from-blue-400/10 to-blue-400/5 border-blue-400/20 p-6 shadow-sm flex justify-between items-start">
             <div>
               <p className="text-sm font-medium text-muted-foreground mb-2">Shipped</p>
               <p className="text-3xl font-semibold text-foreground">{shippedCount}</p>
             </div>
-            <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600">
-              <Truck className="h-5 w-5" />
+            <div className="p-3 rounded-lg bg-blue-400/20 flex items-center justify-center text-blue-500">
+              <Truck className="h-6 w-6" />
             </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-red-50/50 p-6 shadow-sm flex justify-between items-start">
+          <div className="rounded-xl border bg-gradient-to-br from-rose-400/10 to-rose-400/5 border-rose-400/20 p-6 shadow-sm flex justify-between items-start">
             <div>
               <p className="text-sm font-medium text-muted-foreground mb-2">Cancelled</p>
               <p className="text-3xl font-semibold text-foreground">{cancelledCount}</p>
             </div>
-            <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center text-red-600">
-              <XCircle className="h-5 w-5" />
+            <div className="p-3 rounded-lg bg-rose-400/20 flex items-center justify-center text-rose-500">
+              <XCircle className="h-6 w-6" />
             </div>
           </div>
         </div>

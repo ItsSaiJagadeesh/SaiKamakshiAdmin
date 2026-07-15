@@ -1,5 +1,5 @@
 import { collection, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebaseconfig';
+import { db } from '@/config/firebaseconfig';
 import { Product } from '@/types/product';
 
 export const fetchProducts = async () => {

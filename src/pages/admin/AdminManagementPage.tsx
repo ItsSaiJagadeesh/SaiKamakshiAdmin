@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Trash2, ShieldAlert } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
-import { db, app as primaryApp } from '@/lib/firebaseconfig';
+import { db, app as primaryApp } from '@/config/firebaseconfig';
 import { collection, query, where, getDocs, doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signOut } from 'firebase/auth';

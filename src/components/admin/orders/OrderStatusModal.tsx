@@ -4,7 +4,6 @@ import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Order } from '@/types/order';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface OrderStatusModalProps {
   isOpen: boolean;
@@ -12,11 +11,7 @@ interface OrderStatusModalProps {
   onConfirm: (
     status: Order['status'], 
     extraDetails?: { 
-      shippingDetails?: { courierName: string, trackingId: string },
-      workProgressDetails?: string,
-      expectedShipmentDate?: string,
-      expectedDeliveryDate?: string,
-      cancellationReason?: string
+      shippingDetails?: { courierName: string, trackingId: string, trackingLink?: string }
     }
   ) => void;
   newStatus: Order['status'] | null;
@@ -26,21 +21,14 @@ interface OrderStatusModalProps {
 export function OrderStatusModal({ isOpen, onClose, onConfirm, newStatus, isLoading }: OrderStatusModalProps) {
   const [courierName, setCourierName] = useState('');
   const [trackingId, setTrackingId] = useState('');
-  
-  const [workProgressDetails, setWorkProgressDetails] = useState('');
-  const [expectedShipmentDate, setExpectedShipmentDate] = useState('');
-  const [expectedDeliveryDate, setExpectedDeliveryDate] = useState('');
-  const [cancellationReason, setCancellationReason] = useState('');
+  const [trackingLink, setTrackingLink] = useState('');
 
   // Reset local state when modal opens/closes
   useEffect(() => {
     if (isOpen) {
       setCourierName('');
       setTrackingId('');
-      setWorkProgressDetails('');
-      setExpectedShipmentDate('');
-      setExpectedDeliveryDate('');
-      setCancellationReason('');
+      setTrackingLink('');
     }
   }, [isOpen]);
 
@@ -48,16 +36,10 @@ export function OrderStatusModal({ isOpen, onClose, onConfirm, newStatus, isLoad
 
   const statusUpperCase = newStatus.toUpperCase();
   const isShipping = statusUpperCase === 'SHIPPED';
-  const isConfirmed = statusUpperCase === 'CONFIRMED';
-  const isCancelled = statusUpperCase === 'CANCELLED';
 
   const handleConfirm = () => {
     onConfirm(newStatus, {
-      shippingDetails: isShipping ? { courierName, trackingId } : undefined,
-      workProgressDetails: isConfirmed ? workProgressDetails : undefined,
-      expectedShipmentDate: isConfirmed ? expectedShipmentDate : undefined,
-      expectedDeliveryDate: isShipping ? expectedDeliveryDate : undefined,
-      cancellationReason: isCancelled ? cancellationReason : undefined
+      shippingDetails: isShipping ? { courierName, trackingId, trackingLink } : undefined
     });
   };
 
@@ -87,6 +69,7 @@ export function OrderStatusModal({ isOpen, onClose, onConfirm, newStatus, isLoad
                 {isShipping ? 'Shipping Details' : 'Confirm Status Change'}
               </h2>
               <button 
+                title='close'
                 onClick={onClose}
                 className="text-muted-foreground hover:text-foreground transition-colors"
                 disabled={isLoading}
@@ -109,56 +92,10 @@ export function OrderStatusModal({ isOpen, onClose, onConfirm, newStatus, isLoad
                   onChange={(e) => setTrackingId(e.target.value)}
                   disabled={isLoading}
                 />
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-muted-foreground">Expected Delivery Date</label>
-                  <Input 
-                    type="date"
-                    value={expectedDeliveryDate}
-                    onChange={(e) => setExpectedDeliveryDate(e.target.value)}
-                    disabled={isLoading}
-                  />
-                </div>
-              </div>
-            ) : isConfirmed ? (
-              <div className="space-y-4">
-                <p className="text-foreground text-sm mb-4">
-                  Change order status to <span className="font-bold text-primary uppercase">{newStatus}</span>?
-                </p>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-muted-foreground">Work Progress</label>
-                  <Select value={workProgressDetails} onValueChange={setWorkProgressDetails} disabled={isLoading}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select current stage..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Designing">Designing</SelectItem>
-                      <SelectItem value="Crafting">Crafting</SelectItem>
-                      <SelectItem value="Polishing">Polishing</SelectItem>
-                      <SelectItem value="Quality Check">Quality Check</SelectItem>
-                      <SelectItem value="Packaging">Packaging</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-muted-foreground">Expected Shipment Date</label>
-                  <Input 
-                    type="date"
-                    value={expectedShipmentDate}
-                    onChange={(e) => setExpectedShipmentDate(e.target.value)}
-                    disabled={isLoading}
-                  />
-                </div>
-              </div>
-            ) : isCancelled ? (
-              <div className="space-y-4">
-                <p className="text-foreground text-sm mb-4">
-                  Change order status to <span className="font-bold text-destructive uppercase">{newStatus}</span>?
-                </p>
                 <Input 
-                  placeholder="Cancellation Reason" 
-                  value={cancellationReason}
-                  onChange={(e) => setCancellationReason(e.target.value)}
+                  placeholder="Tracking Link (Optional)" 
+                  value={trackingLink}
+                  onChange={(e) => setTrackingLink(e.target.value)}
                   disabled={isLoading}
                 />
               </div>

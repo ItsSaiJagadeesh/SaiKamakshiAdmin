@@ -10,9 +10,10 @@ import {
   getDoc,
   where
 } from 'firebase/firestore';
-import { db } from '@/lib/firebaseconfig';
+import { db } from '@/config/firebaseconfig';
 import { Order } from '@/types/order';
 import { toast } from 'sonner';
+import apiClient from '@/config/axios';
 
 const ORDERS_COLLECTION = 'orders';
 
@@ -38,76 +39,52 @@ export const useUpdateOrderStatus = () => {
       id, 
       status, 
       shippingDetails,
-      workProgressDetails,
-      expectedShipmentDate,
-      expectedDeliveryDate,
-      cancellationReason
     }: { 
       id: string; 
       status: Order['status'];
-      shippingDetails?: { courierName: string, trackingId: string };
-      workProgressDetails?: string;
-      expectedShipmentDate?: string;
-      expectedDeliveryDate?: string;
-      cancellationReason?: string;
+      shippingDetails?: { courierName: string, trackingId: string, trackingLink?: string };
     }) => {
       const orderRef = doc(db, 'orders', id);
       
-      const updateData: any = { 
+      const updateData: Partial<Order> = { 
         status, 
-        updatedAt: serverTimestamp() 
       };
       
-      if (shippingDetails) updateData.shippingDetails = shippingDetails;
-      if (workProgressDetails) updateData.workProgressDetails = workProgressDetails;
-      if (expectedShipmentDate) updateData.expectedShipmentDate = expectedShipmentDate;
-      if (expectedDeliveryDate) updateData.expectedDeliveryDate = expectedDeliveryDate;
-      if (cancellationReason) updateData.cancellationReason = cancellationReason;
-
+      if (status=="SHIPPED"  && shippingDetails){ 
+        updateData.shippingDetails = shippingDetails;
+      }
       if (status === 'CANCELLED') {
         updateData.paymentStatus = 'Refunded';
-      }
 
-      await updateDoc(orderRef, updateData);
-
-      // Automatic Refund Logic for Cancelled Orders
-      if (status === 'CANCELLED') {
-        const pQuery = query(collection(db, 'payments'), where('orderId', '==', id));
-        const pSnapshot = await getDocs(pQuery);
-        if (!pSnapshot.empty) {
-          const paymentDoc = pSnapshot.docs[0];
-          const paymentData = paymentDoc.data();
-          if (paymentData.status === 'Successful') {
-            await updateDoc(doc(db, 'payments', paymentDoc.id), {
+        try{
+          const paymentRef = query(collection(db, 'payments'), where('orderId', '==', id));
+          const paymentSnapshot = await getDocs(paymentRef);
+          if (!paymentSnapshot.empty) {
+            const paymentDoc = paymentSnapshot.docs[0];
+            await updateDoc(paymentDoc.ref, {
               status: 'Refunded',
-              refundAmount: paymentData.amountPaid || paymentData.amount || 0,
               updatedAt: serverTimestamp()
             });
           }
         }
+        catch(error){
+          console.error("Error updating payment status to Refunded:", error);
+        }
+        
       }
+
+      await updateDoc(orderRef, {
+        ...updateData,
+        updatedAt: serverTimestamp()
+      });
 
       // Trigger email notification backend
       try {
         // Fetch full order to send to backend
-        const orderSnap = await getDoc(orderRef);
-        if (orderSnap.exists()) {
-          const orderData = { id: orderSnap.id, ...orderSnap.data() } as Order;
-          
-          let userEmail = "[EMAIL_ADDRESS]";
-          if (orderData.userId) {
-            const userSnap = await getDoc(doc(db, 'users', orderData.userId));
-            if (userSnap.exists() && userSnap.data().email) {
-              userEmail = userSnap.data().email;
-            }
-          }
-
-          await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/send-order-email`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...orderData, userEmail })
+          const orderId = id;
+          await apiClient.post("/api/order/send-order-email", {
+            orderId,
           });
-        }
       } catch (err) {
         console.error("Failed to trigger email notification:", err);
       }

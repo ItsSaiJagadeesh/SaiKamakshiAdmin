@@ -5,7 +5,7 @@ import {
   query,
   orderBy
 } from 'firebase/firestore';
-import { db } from '@/lib/firebaseconfig';
+import { db } from '@/config/firebaseconfig';
 import { Payment } from '@/types/payment';
 
 const PAYMENTS_COLLECTION = 'payments';

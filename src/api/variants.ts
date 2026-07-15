@@ -11,7 +11,7 @@ import {
   orderBy,
   increment
 } from 'firebase/firestore';
-import { db } from '@/lib/firebaseconfig';
+import { db } from '@/config/firebaseconfig';
 import { Variant } from '@/types/variant';
 import { toast } from 'sonner';
 

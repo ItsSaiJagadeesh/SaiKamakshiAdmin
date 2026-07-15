@@ -118,13 +118,6 @@ export default function PaymentsPage() {
             Failed
           </span>
         );
-      case 'Refunded':
-        return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-            <Clock className="w-3.5 h-3.5" />
-            Refunded
-          </span>
-        );
       default:
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
@@ -229,7 +222,6 @@ export default function PaymentsPage() {
               <SelectItem value="SUCCESSFUL">Successful</SelectItem>
               <SelectItem value="PENDING">Pending</SelectItem>
               <SelectItem value="FAILED">Failed</SelectItem>
-              <SelectItem value="REFUNDED">Refunded</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -293,11 +285,11 @@ export default function PaymentsPage() {
                     {payment.orderId.toUpperCase().slice(0, 12)}
                   </td>
                   <td className="px-6 py-4 text-muted-foreground">
-                    {payment.razorpayPaymentId || payment.paymentId.slice(0, 16) + "..."}
+                    {payment.CashFreePaymentId || payment.transactionId || payment.paymentId.slice(0, 16) + "..."}
                   </td>
                   <td className="px-6 py-4">
                     <span className="inline-flex items-center px-2 py-1 rounded border border-border bg-muted/50 text-xs font-medium">
-                      {payment.method === 'RAZORPAY' ? 'Razorpay' : 'COD'}
+                      {payment.method === 'CASHFREE' ? 'Cashfree' : payment.method === 'MANUAL' ? 'Manual' : 'COD'}
                     </span>
                   </td>
                   <td className="px-6 py-4 font-semibold text-foreground">

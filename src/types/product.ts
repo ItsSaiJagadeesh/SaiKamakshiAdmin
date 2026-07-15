@@ -1,3 +1,5 @@
+import { Timestamp } from "firebase/firestore";
+
 export interface ProductSize {
   sizeId: string;
   label: string;
@@ -25,6 +27,6 @@ export interface Product {
     rating: number;
     count: number;
   };
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
 }

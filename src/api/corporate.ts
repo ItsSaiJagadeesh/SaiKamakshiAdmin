@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { collection, getDocs, doc, updateDoc, deleteDoc, orderBy, query } from 'firebase/firestore';
-import { db } from '@/lib/firebaseconfig';
+import { db } from '@/config/firebaseconfig';
 
 export interface CorporateOrder {
   id?: string;

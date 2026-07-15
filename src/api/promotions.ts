@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   collection, getDocs, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, query, orderBy
 } from 'firebase/firestore';
-import { db } from '@/lib/firebaseconfig';
+import { db } from '@/config/firebaseconfig';
 import { Sale, PromoCode } from '@/types/promotions';
 import { toast } from 'sonner';
 

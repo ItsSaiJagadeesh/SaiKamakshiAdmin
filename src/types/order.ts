@@ -1,17 +1,22 @@
+import { Timestamp } from "firebase/firestore";
 export interface CartItem {
   productId: string;
-  variantId: string;
-  variantSizeId: string;
-  variantName: string;
-  size: string;
+  sizeId: string;
+  name: string;
+  slug: string;
+  sizeLabel: string;
   price: number;
   quantity: number;
-  image: string;
+  image?: string;
+  isCustom?: boolean;
+  description?: string;
+  notes?: string;
 }
 
 export interface AddressFormValues {
-  name: string;
-  phone: string;
+  name?: string;
+  phone?: string;
+  email?: string;
   street: string;
   area?: string;
   city: string;
@@ -26,28 +31,24 @@ export interface Order {
   userId?: string;
 
   items: CartItem[];
-
   address: AddressFormValues;
 
   paymentStatus: "Pending" | "Paid" | "Failed" | "Refunded";
-  deliveryOtp?: string;
 
   total: number;
   discount?: number;
   finalAmount: number;
   coupon?: string;
-  status: "PLACED" | "CONFIRMED" | "SHIPPED" | "DELIVERED" | "CANCELLED";
+  status: "CONFIRMED" | "SHIPPED" | "DELIVERED" | "CANCELLED";
 
   shippingDetails?: {
     courierName: string;
     trackingId: string;
+    trackingLink?: string;
   };
 
-  workProgressDetails?: string;
-  expectedShipmentDate?: string;
-  expectedDeliveryDate?: string;
-  cancellationReason?: string;
+  invoiceUrl?: string;
 
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
 }

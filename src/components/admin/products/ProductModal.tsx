@@ -12,6 +12,7 @@ import { useCollections } from '@/api/collections';
 import { toast } from 'sonner';
 import { Plus, Trash2, X } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
+import { processImageFiles } from '@/utils/imageHelpers';
 
 interface ProductModalProps {
   open: boolean;
@@ -78,19 +79,23 @@ export function ProductModal({ open, onOpenChange, productToEdit, onSubmit, isLo
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
+
+    const files = Array.from(e.target.files ?? []);
+
     if (!files || files.length === 0) return;
+
+    const processedFiles = await processImageFiles(files);
 
     try {
       setIsUploading(true);
       const newUrls = [];
       for (let i = 0; i < files.length; i++) {
-        const url = await uploadToCloudinary(files[i], 'jewelery/products');
+        const url = await uploadToCloudinary(processedFiles[i], 'jewelery/products');
         newUrls.push(url);
       }
       setImages(prev => [...prev, ...newUrls]);
       toast.success('Images uploaded successfully');
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.message || 'Failed to upload images');
     } finally {
       setIsUploading(false);

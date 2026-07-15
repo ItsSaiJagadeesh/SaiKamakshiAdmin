@@ -50,14 +50,15 @@ export default function CollectionsPage() {
     }
   };
 
-  const handleSubmit = (data: any) => {
+  const handleSubmit = (data: Partial<Collection>) => {
     if (collectionToEdit && collectionToEdit.id) {
       updateMutation.mutate(
         { id: collectionToEdit.id, ...data },
         { onSuccess: () => setIsModalOpen(false) }
       );
-    } else {
-      createMutation.mutate(data, { onSuccess: () => setIsModalOpen(false) });
+    } else { 
+      // createMutation expects all required fields for a new collection
+      createMutation.mutate(data as Omit<Collection, 'id' | 'createdAt' | 'updatedAt' | 'productCount'>, { onSuccess: () => setIsModalOpen(false) });
     }
   };
 

@@ -15,6 +15,7 @@ import { uploadToCloudinary } from '@/lib/cloudinary';
 import { useQueryClient } from '@tanstack/react-query';
 import apiClient from '@/config/axios';
 import { ProductSize } from '@/types/product';
+import { convertHeicToWebP } from '@/utils/imageHelpers';
 
 interface CreateOrderPanelProps {
   isOpen: boolean;
@@ -128,9 +129,11 @@ export function CreateOrderPanel({ isOpen, onClose }: CreateOrderPanelProps) {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const processedFile = await convertHeicToWebP(file);
+
     setIsUploading(true);
     try {
-      const url = await uploadToCloudinary(file, 'custom_orders');
+      const url = await uploadToCloudinary(processedFile, 'custom_orders');
       setDraftItem(prev => ({ ...prev, image: url }));
     } catch (error) {
       console.error("Upload failed", error);

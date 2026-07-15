@@ -8,12 +8,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { uploadToCloudinary } from '@/lib/cloudinary';
 import { Collection, Status } from '@/types/collection';
 import { toast } from 'sonner';
+import { convertHeicToWebP } from '@/utils/imageHelpers';
 
 interface CollectionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   collectionToEdit?: Collection | null;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: Partial<Collection>) => void;
   isLoading?: boolean;
 }
 
@@ -52,14 +53,17 @@ export function CollectionModal({ open, onOpenChange, collectionToEdit, onSubmit
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+
     if (!file) return;
+
+    const processedFile = await convertHeicToWebP(file);
 
     try {
       setIsUploading(true);
-      const url = await uploadToCloudinary(file, 'jewelery/collections');
+      const url = await uploadToCloudinary(processedFile, 'jewelery/collections');
       setCoverImage(url);
       toast.success('Image uploaded successfully');
-    } catch (error: any) {
+    } catch (error) {
       toast.error(error.message || 'Failed to upload image');
     } finally {
       setIsUploading(false);

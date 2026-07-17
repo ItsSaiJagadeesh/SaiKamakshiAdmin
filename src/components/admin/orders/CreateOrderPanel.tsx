@@ -133,7 +133,7 @@ export function CreateOrderPanel({ isOpen, onClose }: CreateOrderPanelProps) {
 
     setIsUploading(true);
     try {
-      const url = await uploadToCloudinary(processedFile, 'custom_orders');
+      const url = await uploadToCloudinary(processedFile, 'jewelery/custom_orders');
       setDraftItem(prev => ({ ...prev, image: url }));
     } catch (error) {
       console.error("Upload failed", error);

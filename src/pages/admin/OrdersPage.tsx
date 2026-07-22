@@ -28,6 +28,7 @@ const formatPrice = (price?: number) => {
     currency: 'INR',
     maximumFractionDigits: 0
   }).format(price);
+  
 };
 
 export default function OrdersPage() {

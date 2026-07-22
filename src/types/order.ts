@@ -40,7 +40,7 @@ export interface Order {
   shippingCharge: number;
   finalAmount: number;
   coupon?: string;
-  status: "CONFIRMED" | "SHIPPED" | "DELIVERED" | "CANCELLED" | "PENDING_PAYMENT";
+  status: "CONFIRMED" | "SHIPPED" | "DELIVERED" | "CANCELLED" | "PENDING_PAYMENT" | "PAYMENT_FAILED";
 
   shippingDetails?: {
     courierName: string;

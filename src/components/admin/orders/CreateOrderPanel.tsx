@@ -7,10 +7,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useProducts } from '@/api/products';
-import { collection, addDoc, Timestamp, DocumentReference } from 'firebase/firestore';
+import { collection, Timestamp, DocumentReference } from 'firebase/firestore';
 import { db } from '@/config/firebaseconfig';
 import { doc, runTransaction } from 'firebase/firestore';
-import { CartItem, AddressFormValues } from '@/types/order';
+import { OrderItem, AddressFormValues } from '@/types/order';
 import { uploadToCloudinary } from '@/lib/cloudinary';
 import { useQueryClient } from '@tanstack/react-query';
 import apiClient from '@/config/axios';
@@ -48,9 +48,9 @@ export function CreateOrderPanel({ isOpen, onClose }: CreateOrderPanelProps) {
   const [country, setCountry] = useState('India');
 
   // Step 3: Products
-  const [items, setItems] = useState<CartItem[]>([]);
+  const [items, setItems] = useState<OrderItem[]>([]);
   const [activeItemForm, setActiveItemForm] = useState<ActiveForm>(null);
-  const [draftItem, setDraftItem] = useState<Partial<CartItem>>({});
+  const [draftItem, setDraftItem] = useState<Partial<OrderItem>>({});
   const [isUploading, setIsUploading] = useState(false);
   
   // Step 4: Billing
@@ -108,7 +108,7 @@ export function CreateOrderPanel({ isOpen, onClose }: CreateOrderPanelProps) {
       return;
     }
 
-    const newItem = draftItem as CartItem;
+    const newItem = draftItem as OrderItem;
 
     if (activeItemForm?.index !== undefined) {
       const newItems = [...items];
@@ -176,107 +176,12 @@ export function CreateOrderPanel({ isOpen, onClose }: CreateOrderPanelProps) {
   const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const finalAmount = Math.max(0, subtotal - discount);
 
-  // const handleSubmit = async () => {
-  //   if (!canProceedStep4) return;
-
-  //   setIsLoading(true);
-  //   try {
-  //     const paymentId = `manual_${crypto.randomUUID()}`;
-      
-  //     const address: AddressFormValues = {
-  //       name,
-  //       phone,
-  //       email,
-  //       street,
-  //       area,
-  //       city,
-  //       state: stateName,
-  //       pincode,
-  //       country,
-  //       type: 'home'
-  //     };
-
-  //     const orderData = {
-  //       items,
-  //       address,
-  //       paymentStatus: transactionId ? "Paid" : "Pending",
-  //       total: subtotal,
-  //       discount,
-  //       finalAmount,
-  //       status: "CONFIRMED",
-  //       createdAt: Timestamp.now(),
-  //       updatedAt: Timestamp.now(),
-  //     };
-
-
-  //     const orderRef = await addDoc(collection(db, 'orders'), orderData);
-
-  //     //payment calculations
-
-  //     let subTotal = 0;
-  //     let totalCGST = 0;
-  //     let totalSGST = 0;
-
-  //     items.forEach((item)=>{
-  //           const itemInclusiveTotal = (item.price * item.quantity);
-  //           const taxableValue = itemInclusiveTotal ;
-  //           const cgst = taxableValue * 0.015;
-  //           const sgst = taxableValue * 0.015;
-
-  //           subTotal = subTotal + (item.price * item.quantity);
-  //           totalCGST = totalCGST + cgst;
-  //           totalSGST = totalSGST + sgst;
-  //     })
-
-  //     const shippingCharges = 0;
-
-  //     const paymentAmount = subTotal - discount + totalCGST + totalSGST + shippingCharges;
-
-      
-      
-  //     await addDoc(collection(db, "payments"), {
-  //       orderId: orderRef.id,
-  //       paymentId,
-  //       method: "MANUAL",
-  //       amount: paymentAmount,
-  //       status: transactionId ? "Successful" : "Pending",
-  //       transactionId: transactionId || null,
-  //       createdAt: Timestamp.now(),
-  //       updatedAt: Timestamp.now(),
-  //     });
-
-  //     //generate Invoice
-  //     await apiClient.post("/api/invoice/generate",{
-  //       orderId: orderRef.id,
-  //     });
-
-  //     //send email 
-  //     await apiClient.post("/api/order/send-order-email",{
-  //       orderId: orderRef.id,
-  //     })
-
-
-  //     // Invalidate orders query to refresh the list
-  //     queryClient.invalidateQueries({ queryKey: ['orders'] });
-
-  //     alert("Order created successfully!");
-  //     resetForm();
-  //     onClose();
-  //   } catch (error) {
-  //     console.error("Error creating manual order:", error);
-  //     alert("Failed to create order.");
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
-
   const handleSubmit = async () => {
     if (!canProceedStep4) return;
 
     setIsLoading(true);
 
     try {
-      const paymentId = `manual_${crypto.randomUUID()}`;
 
       const address: AddressFormValues = {
         name,
@@ -299,41 +204,16 @@ export function CreateOrderPanel({ isOpen, onClose }: CreateOrderPanelProps) {
         discount,
         finalAmount,
         status: "CONFIRMED",
+        transactionId,
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
       };
 
-      // Payment calculations
-      let subTotal = 0;
-      let totalCGST = 0;
-      let totalSGST = 0;
-
-      items.forEach((item) => {
-        const itemInclusiveTotal = item.price * item.quantity;
-        const taxableValue = itemInclusiveTotal;
-
-        const cgst = taxableValue * 0.015;
-        const sgst = taxableValue * 0.015;
-
-        subTotal += itemInclusiveTotal;
-        totalCGST += cgst;
-        totalSGST += sgst;
-      });
-
-      const shippingCharges = 0;
-
-      const paymentAmount =
-        subTotal -
-        discount +
-        totalCGST +
-        totalSGST +
-        shippingCharges;
 
       let orderId = "";
 
       await runTransaction(db, async (transaction) => {
         const orderRef = doc(collection(db, "orders"));
-        const paymentRef = doc(collection(db, "payments"));
 
         orderId = orderRef.id;
 
@@ -388,16 +268,6 @@ export function CreateOrderPanel({ isOpen, onClose }: CreateOrderPanelProps) {
 
           transaction.set(orderRef, orderData);
 
-          transaction.set(paymentRef, {
-            orderId,
-            paymentId,
-            method: "MANUAL",
-            amount: paymentAmount,
-            status: transactionId ? "Successful" : "Pending",
-            transactionId: transactionId || null,
-            createdAt: Timestamp.now(),
-            updatedAt: Timestamp.now(),
-          });
 
           for (const update of productUpdates) {
             transaction.update(update.ref, {

@@ -34,10 +34,10 @@ export default function PaymentsPage() {
     // 1. Search Filter (by Order ID or Payment ID)
     const query = searchQuery.toLowerCase();
     const orderMatch = payment.orderId?.toLowerCase().includes(query);
-    const paymentMatch = payment.paymentId?.toLowerCase().includes(query);
-    const razorpayMatch = payment.CashFreePaymentId?.toLowerCase().includes(query);
+    const paymentMatch = payment.razorpayPaymentId?.toLowerCase().includes(query);
+
     
-    if (query && !orderMatch && !paymentMatch && !razorpayMatch) return false;
+    if (query && !orderMatch && !paymentMatch ) return false;
 
     // 2. Status Filter
     if (statusFilter !== 'ALL' && payment.status?.toUpperCase() !== statusFilter) return false;
@@ -285,11 +285,11 @@ export default function PaymentsPage() {
                     {payment.orderId.toUpperCase().slice(0, 12)}
                   </td>
                   <td className="px-6 py-4 text-muted-foreground">
-                    {payment.CashFreePaymentId || payment.transactionId || payment.paymentId.slice(0, 16) + "..."}
+                    {payment.razorpayPaymentId || payment.id.slice(0, 16) + "..."}
                   </td>
                   <td className="px-6 py-4">
                     <span className="inline-flex items-center px-2 py-1 rounded border border-border bg-muted/50 text-xs font-medium">
-                      {payment.method === 'CASHFREE' ? 'Cashfree' : payment.method === 'MANUAL' ? 'Manual' : 'COD'}
+                      {payment.method === 'RAZORPAY' ? 'RAZORPAY' : payment.method === 'MANUAL' ? 'Manual' : 'COD'}
                     </span>
                   </td>
                   <td className="px-6 py-4 font-semibold text-foreground">

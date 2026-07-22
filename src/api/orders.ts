@@ -21,7 +21,7 @@ export function useOrders() {
   return useQuery({
     queryKey: ['orders'],
     queryFn: async () => {
-      const q = query(collection(db, ORDERS_COLLECTION), orderBy('createdAt', 'desc'));
+      const q = query(collection(db, ORDERS_COLLECTION),where("status","==","CONFIRMED"), orderBy('createdAt', 'desc'));
       const snapshot = await getDocs(q);
       return snapshot.docs.map(doc => ({
         id: doc.id,

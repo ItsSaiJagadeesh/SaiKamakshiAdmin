@@ -35,6 +35,6 @@ export const statusDisable = (status:Order['status'],value:string)=>{
       return true;
       
     default: 
-      return false;
+      return true;
   }
 }

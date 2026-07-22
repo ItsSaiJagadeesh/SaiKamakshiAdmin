@@ -1,15 +1,15 @@
 import { Timestamp } from "firebase/firestore";
-export interface CartItem {
-  productId: string;
-  sizeId: string;
+export interface OrderItem {
+  collectionId?: string;
+  productId?: string;
+  sizeId?: string;
   name: string;
-  slug: string;
+  slug?: string;
   sizeLabel: string;
   price: number;
   quantity: number;
   image?: string;
-  isCustom?: boolean;
-  description?: string;
+  isCustom: boolean;
   notes?: string;
 }
 
@@ -30,16 +30,17 @@ export interface Order {
   id?: string;
   userId?: string;
 
-  items: CartItem[];
+  items: OrderItem[];
   address: AddressFormValues;
 
   paymentStatus: "Pending" | "Paid" | "Failed" | "Refunded";
 
   total: number;
   discount?: number;
+  shippingCharge: number;
   finalAmount: number;
   coupon?: string;
-  status: "CONFIRMED" | "SHIPPED" | "DELIVERED" | "CANCELLED";
+  status: "CONFIRMED" | "SHIPPED" | "DELIVERED" | "CANCELLED" | "PENDING_PAYMENT";
 
   shippingDetails?: {
     courierName: string;
